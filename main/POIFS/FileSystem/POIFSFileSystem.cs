@@ -125,31 +125,6 @@ namespace NPOI.POIFS.FileSystem
             : base(file)
         {
         }
-        /// <summary>
-        /// Checks that the supplied Stream(which MUST
-        /// support mark and reset, or be a PushbackInputStream)
-        /// has a POIFS (OLE2) header at the start of it.
-        /// If your Streamdoes not support mark / reset,
-        /// then wrap it in a PushBackInputStream, then be
-        /// sure to always use that, and not the original!
-        /// </summary>
-        /// <param name="inp">An Streamwhich supports either mark/reset, or is a PushbackStream</param>
-        /// <returns>
-        /// 	<c>true</c> if [has POIFS header] [the specified inp]; otherwise, <c>false</c>.
-        /// </returns>
-        public static new bool HasPOIFSHeader(Stream inp)
-        {
-
-            return NPOIFSFileSystem.HasPOIFSHeader(inp);
-        }
-        /**
-         * Checks if the supplied first 8 bytes of a stream / file
-         *  has a POIFS (OLE2) header.
-         */
-        public static new bool HasPOIFSHeader(byte[] header8Bytes)
-        {
-            return NPOIFSFileSystem.HasPOIFSHeader(header8Bytes);
-        }
 
         /**
          * Creates a new {@link POIFSFileSystem} in a new {@link File}.
@@ -164,11 +139,22 @@ namespace NPOI.POIFS.FileSystem
             // TODO Make this nicer!
             // Create a new empty POIFS in the file
             POIFSFileSystem tmp = new POIFSFileSystem();
-            FileStream fout = file.Open(FileMode.OpenOrCreate, FileAccess.ReadWrite);
-            tmp.WriteFileSystem(fout);
-            fout.Close();
-            tmp.Close();
-
+            try
+            {
+                FileStream fout = file.Open(FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                try
+                {
+                    tmp.WriteFileSystem(fout);
+                }
+                finally
+                {
+                    fout.Close();
+                }
+            }
+            finally
+            {
+                tmp.Close(); 
+            }
             // Open it up again backed by the file
             return new POIFSFileSystem(file, false);
         }

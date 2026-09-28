@@ -50,7 +50,9 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
         internal void Write(StreamWriter sw)
         {
             sw.Write("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
-            sw.Write("<w:styles xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\">");
+            sw.Write("<w:styles xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"");
+            sw.Write(" xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\" xmlns:w16cex=\"http://schemas.microsoft.com/office/word/2018/wordml/cex\" xmlns:w16cid=\"http://schemas.microsoft.com/office/word/2016/wordml/cid\" xmlns:w16=\"http://schemas.microsoft.com/office/word/2018/wordml\" xmlns:w16sdtdh=\"http://schemas.microsoft.com/office/word/2020/wordml/sdtdatahash\" xmlns:w16se=\"http://schemas.microsoft.com/office/word/2015/wordml/symex\" mc:Ignorable=\"w14 w15 w16se w16cid w16 w16cex w16sdtdh\"");
+            sw.Write('>');
             if (this.docDefaults != null)
                 this.docDefaults.Write(sw, "docDefaults");
             if (this.latentStyles != null)
@@ -138,6 +140,11 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
             this.docDefaultsField = new CT_DocDefaults();
             return this.docDefaultsField;
         }
+
+        public void RemoveStyle(int pos)
+        {
+            this.styleField.RemoveAt(pos);
+        }
     }
 
 
@@ -176,13 +183,13 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
-            sw.Write(">");
+            sw.WriteStartW(nodeName);
+            sw.Write('>');
             if (this.rPrDefault != null)
                 this.rPrDefault.Write(sw, "rPrDefault");
             if (this.pPrDefault != null)
                 this.pPrDefault.Write(sw, "pPrDefault");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.WriteEndW(nodeName);
         }
 
         [XmlElement(Order = 0)]
@@ -265,11 +272,11 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
-            sw.Write(">");
+            sw.WriteStartW(nodeName);
+            sw.Write('>');
             if (this.rPr != null)
                 this.rPr.Write(sw, "rPr");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.WriteEndW(nodeName);
         }
 
         [XmlElement(Order = 0)]
@@ -327,11 +334,11 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
-            sw.Write(">");
+            sw.WriteStartW(nodeName);
+            sw.Write('>');
             if (this.pPr != null)
                 this.pPr.Write(sw, "pPr");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.WriteEndW(nodeName);
         }
 
         [XmlElement(Order = 0)]
@@ -416,14 +423,14 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:defLockedState", this.defLockedState== ST_OnOff.off?"0":"1");
             XmlHelper.WriteAttribute(sw, "w:defUIPriority", this.defUIPriority);
             XmlHelper.WriteAttribute(sw, "w:defSemiHidden", this.defSemiHidden == ST_OnOff.off ? "0" : "1");
             XmlHelper.WriteAttribute(sw, "w:defUnhideWhenUsed", this.defUnhideWhenUsed == ST_OnOff.off ? "0" : "1");
             XmlHelper.WriteAttribute(sw, "w:defQFormat", this.defQFormat == ST_OnOff.off ? "0" : "1");
             XmlHelper.WriteAttribute(sw, "w:count", this.count);
-            sw.Write(">");
+            sw.Write('>');
             if (this.lsdException != null)
             {
                 foreach (CT_LsdException x in this.lsdException)
@@ -431,7 +438,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
                     x.Write(sw, "lsdException");
                 }
             }
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.WriteEndW(nodeName);
         }
 
         public CT_LatentStyles()
@@ -754,14 +761,14 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:type", this.type.ToString());
             if(this.@default!= ST_OnOff.off)
                 XmlHelper.WriteAttribute(sw, "w:default", "1");
             if (this.customStyle == ST_OnOff.on)
                 XmlHelper.WriteAttribute(sw, "w:customStyle", "1");
             XmlHelper.WriteAttribute(sw, "w:styleId", this.styleId);
-            sw.Write(">");
+            sw.Write('>');
             if (this.name != null)
                 this.name.Write(sw, "name");
             if (this.aliases != null)
@@ -811,7 +818,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
                     x.Write(sw, "tblStylePr");
                 }
             }
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.WriteEndW(nodeName);
         }
 
         [XmlElement(Order = 0)]
@@ -1216,10 +1223,10 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:val", this.val.ToString());
-            sw.Write(">");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.Write('>');
+            sw.WriteEndW(nodeName);
         }
 
 
@@ -1260,7 +1267,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             if(val.HasValue)
                 XmlHelper.WriteAttribute(sw, "w:val", this.val.Value.ToString());
             sw.Write("/>");
@@ -1380,7 +1387,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:val", this.val.ToString());
             XmlHelper.WriteAttribute(sw, "w:color", this.color);
             if(this.themeColor!= ST_ThemeColor.none)
@@ -1694,10 +1701,10 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:val", this.val);
-            sw.Write(">");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.Write('>');
+            sw.WriteEndW(nodeName);
         }
 
 
@@ -1741,10 +1748,10 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:val", this.val.ToString());
-            sw.Write(">");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.Write('>');
+            sw.WriteEndW(nodeName);
         }
 
 
@@ -1806,7 +1813,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:val", this.val, true);
             if(this.themeColorField!= ST_ThemeColor.none)
                 XmlHelper.WriteAttribute(sw, "w:themeColor", this.themeColor.ToString());
@@ -1937,7 +1944,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:val", this.val.ToString());
             XmlHelper.WriteAttribute(sw, "w:color", this.color);
             if(this.themeColor!= ST_ThemeColor.none)
@@ -2172,7 +2179,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:val", this.val.ToString());
             sw.Write("/>");
         }
@@ -2302,13 +2309,13 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:val", this.val.ToString());
-            XmlHelper.WriteAttribute(sw, "w:color", this.color);
             if (this.sz != null)
                 XmlHelper.WriteAttribute(sw, "w:sz", (ulong)this.sz, true);
            if (this.space != null)
                XmlHelper.WriteAttribute(sw, "w:space", (ulong)this.space, true);
+            XmlHelper.WriteAttribute(sw, "w:color", this.color);
             if(this.themeColor!= ST_ThemeColor.none)
                 XmlHelper.WriteAttribute(sw, "w:themeColor", this.themeColor.ToString());
             XmlHelper.WriteAttribute(sw, "w:themeTint", this.themeTint);

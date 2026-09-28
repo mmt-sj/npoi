@@ -18,15 +18,15 @@ namespace NPOI.OpenXml4Net.OPC
      */
     public class ZipPackage : OPCPackage
     {
-        private static String MIMETYPE = "mimetype";
-        private static String SETTINGS_XML = "settings.xml";
-        private static POILogger logger = POILogFactory.GetLogger(typeof(ZipPackage));
+        private static readonly String MIMETYPE = "mimetype";
+        private static readonly String SETTINGS_XML = "settings.xml";
+        private static readonly POILogger logger = POILogFactory.GetLogger(typeof(ZipPackage));
 
         /**
          * Zip archive, as either a file on disk,
          *  or a stream
          */
-        private Util.ZipEntrySource zipArchive;
+        private readonly Util.ZipEntrySource zipArchive;
         bool isStream = false;  // whether the file is passed in with stream, no means passed in with string path
         public bool IsExternalStream { get { return isStream; } set { isStream = value; } }
 
@@ -58,19 +58,21 @@ namespace NPOI.OpenXml4Net.OPC
             : base(access)
         {
             isStream = true;
-            ZipInputStream zis = ZipHelper.OpenZipStream(in1);
-            // TODO: ZipSecureFile
-            //ThresholdInputStream zis = ZipHelper.OpenZipStream(in1);
-            this.zipArchive = new ZipInputStreamZipEntrySource(zis);
+            // Wrap the raw stream so we can measure compressed bytes per entry and detect
+            // decompression bombs even for streamed / data-descriptor entries (Size == -1).
+            CountingStream counter = new CountingStream(in1);
+            ZipInputStream zis = ZipHelper.OpenZipStream(counter);
+            this.zipArchive = new ZipInputStreamZipEntrySource(zis, counter);
         }
 
         /**
-         * Constructor. Opens a Zip based Open XML document.
+         * Constructor. Opens a Zip based Open XML document from a file.
          *
          * @param path
          *            The path of the file to open or create.
          * @param access
          *            The package access mode.
+         * @throws InvalidOperationException If the zip file cannot be opened.
          */
         public ZipPackage(String path, PackageAccess access)
             : this(new FileInfo(path), access)
@@ -78,12 +80,13 @@ namespace NPOI.OpenXml4Net.OPC
         }
 
         /**
-         * Constructor. Opens a Zip based Open XML document.
+         * Constructor. Opens a Zip based Open XML document from a File.
          *
          * @param file
          *            The file to open or create.
          * @param access
          *            The package access mode.
+         * @throws InvalidOperationException If the zip file cannot be opened.
          */
         public ZipPackage(FileInfo file, PackageAccess access)
             : base(access)
@@ -111,10 +114,11 @@ namespace NPOI.OpenXml4Net.OPC
                 try
                 {
                     fis = file.Create();
-                    // TODO: ZipSecureFile
-                    // zis = ZipHelper.OpenZipStream(fis);
-                    zis = ZipHelper.OpenZipStream(fis);
-                    ze = new ZipInputStreamZipEntrySource(zis);
+                    // Wrap the raw stream so we can measure compressed bytes per entry and
+                    // detect decompression bombs even for streamed / data-descriptor entries.
+                    CountingStream counter = new CountingStream(fis);
+                    zis = ZipHelper.OpenZipStream(counter);
+                    ze = new ZipInputStreamZipEntrySource(zis, counter);
                 }
                 catch (IOException e2)
                 {
@@ -171,10 +175,8 @@ namespace NPOI.OpenXml4Net.OPC
          * list is not empty, it will be emptied.
          *
          * @return All parts contain in this package.
-         * @throws InvalidFormatException
-         *             Throws if the package is not valid.
+         * @throws InvalidFormatException if the package is not valid.
          */
-
         protected override PackagePart[] GetPartsImpl()
         {
             if (this.partList == null)
@@ -318,7 +320,7 @@ namespace NPOI.OpenXml4Net.OPC
          * Builds a PackagePartName for the given ZipEntry,
          *  or null if it's the content types / invalid part
          */
-        private PackagePartName BuildPartName(ZipEntry entry)
+        private static PackagePartName BuildPartName(ZipEntry entry)
         {
             try
             {
@@ -460,7 +462,7 @@ namespace NPOI.OpenXml4Net.OPC
          *
          * @return A unique identifier use to be use as a temp file name.
          */
-        private String GenerateTempFileName(string directory)
+        private static String GenerateTempFileName(string directory)
         {
             FileInfo tmpFilename = null ;
             string path = null;
@@ -503,9 +505,9 @@ namespace NPOI.OpenXml4Net.OPC
 
         protected override PackagePart GetPartImpl(PackagePartName partName)
         {
-            if (partList.ContainsKey(partName))
+            if (partList.TryGetValue(partName, out PackagePart impl))
             {
-                return partList[partName];
+                return impl;
             }
             return null;
         }
@@ -528,10 +530,10 @@ namespace NPOI.OpenXml4Net.OPC
 
             try
             {
-                if (!(outputStream is ZipOutputStream))
+                if (outputStream is not ZipOutputStream stream)
                     zos = new ZipOutputStream(outputStream);
                 else
-                    zos = (ZipOutputStream)outputStream;
+                    zos = stream;
 
                 zos.UseZip64 = UseZip64.Off;
                 // If the core properties part does not exist in the part list,
@@ -561,15 +563,15 @@ namespace NPOI.OpenXml4Net.OPC
                     }
                 }
 
+                // Save content type part.
+                logger.Log(POILogger.DEBUG, "Save content types part");
+                this.contentTypeManager.Save(zos);
+
                 // Save package relationships part.
                 logger.Log(POILogger.DEBUG, "Save package relationships");
                 ZipPartMarshaller.MarshallRelationshipPart(this.Relationships,
                         PackagingUriHelper.PACKAGE_RELATIONSHIPS_ROOT_PART_NAME,
                         zos);
-
-                // Save content type part.
-                logger.Log(POILogger.DEBUG, "Save content types part");
-                this.contentTypeManager.Save(zos);
 
                 // Save parts.
                 foreach (PackagePart part in GetParts())
@@ -582,10 +584,8 @@ namespace NPOI.OpenXml4Net.OPC
                     logger.Log(POILogger.DEBUG, "Save part '"
                             + ZipHelper.GetZipItemNameFromOPCName(part
                                     .PartName.Name) + "'");
-                    if (partMarshallers.ContainsKey(part._contentType))
+                    if (partMarshallers.TryGetValue(part._contentType, out PartMarshaller marshaller))
                     {
-                        PartMarshaller marshaller = partMarshallers[part._contentType];
-
                         if (!marshaller.Marshall(part, zos))
                         {
                             throw new OpenXml4NetException(

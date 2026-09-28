@@ -56,11 +56,11 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "r:id", this.id);
             XmlHelper.WriteAttribute(sw, "w:displacedByCustomXml", this.displacedByCustomXml.ToString());
-            sw.Write(">");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.Write('>');
+            sw.WriteEndW(nodeName);
         }
 
         [XmlAttribute(Form = System.Xml.Schema.XmlSchemaForm.Qualified, Namespace = "http://schemas.openxmlformats.org/officeDocument/2006/relationships")]
@@ -205,15 +205,15 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal new void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:edGrp", this.edGrp.ToString());
             XmlHelper.WriteAttribute(sw, "w:ed", this.ed);
             XmlHelper.WriteAttribute(sw, "w:colFirst", this.colFirst);
             XmlHelper.WriteAttribute(sw, "w:colLast", this.colLast);
             XmlHelper.WriteAttribute(sw, "w:id", this.id);
             XmlHelper.WriteAttribute(sw, "w:displacedByCustomXml", this.displacedByCustomXml.ToString());
-            sw.Write(">");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.Write('>');
+            sw.WriteEndW(nodeName);
         }
 
     }

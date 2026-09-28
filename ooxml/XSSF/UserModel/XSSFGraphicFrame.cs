@@ -37,7 +37,6 @@ namespace NPOI.XSSF.UserModel
         private static CT_GraphicalObjectFrame prototype = null;
 
         private CT_GraphicalObjectFrame graphicFrame;
-        private new XSSFClientAnchor anchor;
 
         /**
          * Construct a new XSSFGraphicFrame object.
@@ -49,6 +48,27 @@ namespace NPOI.XSSF.UserModel
         {
             this.drawing = Drawing;
             this.graphicFrame = ctGraphicFrame;
+            // TODO: there may be a better way to delegate this
+            CT_GraphicalObjectData graphicData = graphicFrame.graphic.graphicData;
+            if (graphicData != null)
+            {
+                XmlNodeList nodes = graphicData.DomNode.ChildNodes;
+                for (int i = 0; i < nodes.Count; i++)
+                {
+                    XmlNode node = nodes.Item(i);
+                    // if the frame references a chart, associate the chart with this instance
+                    if (node.Name.Equals("c:chart"))
+                    {
+                        // this better succeed or the document is invalid
+                        POIXMLDocumentPart relation = drawing.GetRelationById(node.Attributes.GetNamedItem("r:id").Value);
+                        // Do XWPF charts need similar treatment?
+                        if (relation is XSSFChart)
+                        {
+                            ((XSSFChart)relation).SetGraphicFrame(this);
+                        }
+                    }
+                }
+            }
         }
 
 
@@ -63,28 +83,28 @@ namespace NPOI.XSSF.UserModel
         public static CT_GraphicalObjectFrame Prototype()
         {
 
-                CT_GraphicalObjectFrame graphicFrame = new CT_GraphicalObjectFrame();
+            CT_GraphicalObjectFrame graphicFrame = new CT_GraphicalObjectFrame();
 
-                NPOI.OpenXmlFormats.Dml.Spreadsheet.CT_GraphicalObjectFrameNonVisual nvGraphic = graphicFrame.AddNewNvGraphicFramePr();
-                NPOI.OpenXmlFormats.Dml.Spreadsheet.CT_NonVisualDrawingProps props = nvGraphic.AddNewCNvPr();
-                props.id = (0);
-                props.name = ("Diagramm 1");
-                nvGraphic.AddNewCNvGraphicFramePr();
+            NPOI.OpenXmlFormats.Dml.Spreadsheet.CT_GraphicalObjectFrameNonVisual nvGraphic = graphicFrame.AddNewNvGraphicFramePr();
+            NPOI.OpenXmlFormats.Dml.Spreadsheet.CT_NonVisualDrawingProps props = nvGraphic.AddNewCNvPr();
+            props.id = (0);
+            props.name = ("Diagramm 1");
+            nvGraphic.AddNewCNvGraphicFramePr();
 
 
 
-                CT_Transform2D transform = graphicFrame.AddNewXfrm();
-                CT_PositiveSize2D extPoint = transform.AddNewExt();
-                CT_Point2D offPoint = transform.AddNewOff();
+            CT_Transform2D transform = graphicFrame.AddNewXfrm();
+            CT_PositiveSize2D extPoint = transform.AddNewExt();
+            CT_Point2D offPoint = transform.AddNewOff();
 
-                extPoint.cx=(0);
-                extPoint.cy=(0);
-                offPoint.x=(0);
-                offPoint.y=(0);
+            extPoint.cx=(0);
+            extPoint.cy=(0);
+            offPoint.x=(0);
+            offPoint.y=(0);
 
-                CT_GraphicalObject graphic = graphicFrame.AddNewGraphic();
+            CT_GraphicalObject graphic = graphicFrame.AddNewGraphic();
 
-                prototype = graphicFrame;
+            prototype = graphicFrame;
             
             return prototype;
         }
@@ -98,10 +118,22 @@ namespace NPOI.XSSF.UserModel
         }
 
         /**
+         * Returns the frame id.
+         * @return id of the frame
+         */
+        public override uint ID
+        {
+            get
+            {
+                return GetNonVisualProperties().id;
+            }
+        }
+
+        /**
          * Returns the frame name.
          * @return name of the frame
          */
-        public String Name
+        public override String Name
         {
             get
             {
@@ -123,11 +155,11 @@ namespace NPOI.XSSF.UserModel
          * Returns the frame anchor.
          * @return the anchor this frame is attached to
          */
-        public XSSFClientAnchor Anchor
+        public new XSSFClientAnchor Anchor
         {
             get
             {
-                return anchor;
+                return (XSSFClientAnchor)anchor;
             }
             set 
             {
@@ -173,7 +205,7 @@ namespace NPOI.XSSF.UserModel
          ///   <attribute name="uri" type="xsd:token"/>
          /// </complexType>
         /// </example>
-        private void AppendChartElement(CT_GraphicalObjectData data, String id)
+        private static void AppendChartElement(CT_GraphicalObjectData data, String id)
         {
             String r_namespaceUri = ST_RelationshipId.NamespaceURI;
             String c_namespaceUri = XSSFDrawing.NAMESPACE_C;
@@ -196,6 +228,8 @@ namespace NPOI.XSSF.UserModel
         {
             return null;
         }
+
+        public override string ShapeName => graphicFrame.nvGraphicFramePr.cNvPr.name;
     }
 }
 

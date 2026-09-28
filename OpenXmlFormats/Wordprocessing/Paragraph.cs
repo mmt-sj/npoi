@@ -6,6 +6,7 @@ using NPOI.OpenXmlFormats.Shared;
 using System.IO;
 using NPOI.OpenXml4Net.Util;
 using System.Collections;
+using System.CodeDom;
 
 namespace NPOI.OpenXmlFormats.Wordprocessing
 {
@@ -171,12 +172,16 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
                 }
                 else if (childNode.LocalName == "fldSimple")
                 {
-                    ctObj.Items.Add(CT_SimpleField.Parse(childNode, namespaceManager));
+                    var sf = CT_SimpleField.Parse(childNode, namespaceManager);
+                    sf.parent = ctObj;
+                    ctObj.Items.Add(sf);
                     ctObj.ItemsElementName.Add(ParagraphItemsChoiceType.fldSimple);
                 }
                 else if (childNode.LocalName == "hyperlink")
                 {
-                    ctObj.Items.Add(CT_Hyperlink1.Parse(childNode, namespaceManager));
+                    var hl=CT_Hyperlink1.Parse(childNode, namespaceManager);
+                    hl.parent = ctObj;
+                    ctObj.Items.Add(hl);
                     ctObj.ItemsElementName.Add(ParagraphItemsChoiceType.hyperlink);
                 }
                 else if (childNode.LocalName == "ins")
@@ -247,10 +252,43 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
         {
             return this.rsidRField != null && rsidRField.Length > 0;
         }
-
+        public void RemoveHyperlink(CT_Hyperlink1 hl)
+        {
+            int index=-1;
+            for(int i = 0; i<Items.Count; i++)
+            {
+                if(Items[i].Equals(hl))
+                {
+                    index=i;
+                    break;
+                }
+            }
+            if(index>=0)
+            {
+                Items.RemoveAt(index);
+                ItemsElementName.RemoveAt(index);
+            }
+        }
+        public void RemoveSimpleField(CT_SimpleField sf)
+        {
+            int index=-1;
+            for(int i = 0; i<Items.Count; i++)
+            {
+                if(Items[i].Equals(sf))
+                {
+                    index=i;
+                    break;
+                }
+            }
+            if(index>=0)
+            {
+                Items.RemoveAt(index);
+                ItemsElementName.RemoveAt(index);
+            }
+        }
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w14:paraId", this.paraIdField);
             XmlHelper.WriteAttribute(sw, "w14:textId", this.textIdField);
             XmlHelper.WriteAttribute(sw, "w:rsidR", this.rsidR);
@@ -258,80 +296,80 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
             XmlHelper.WriteAttribute(sw, "w:rsidRDefault", this.rsidRDefault);
             XmlHelper.WriteAttribute(sw, "w:rsidP", this.rsidP);
             XmlHelper.WriteAttribute(sw, "w:rsidDel", this.rsidDel);
-            sw.Write(">");
+            sw.Write('>');
             if (this.pPr != null&&!this.pPr.IsEmpty)
                 this.pPr.Write(sw, "pPr");
 
             int i = 0;
             foreach (object o in this.Items)
             {
-                if (o is CT_MarkupRange && this.itemsElementNameField[i] == ParagraphItemsChoiceType.bookmarkEnd)
-                    ((CT_MarkupRange)o).Write(sw, "bookmarkEnd");
-                else if (o is CT_MoveBookmark && this.itemsElementNameField[i] == ParagraphItemsChoiceType.moveFromRangeStart)
-                    ((CT_MoveBookmark)o).Write(sw, "moveFromRangeStart");
-                else if (o is CT_RunTrackChange && this.itemsElementNameField[i] == ParagraphItemsChoiceType.moveTo)
-                    ((CT_RunTrackChange)o).Write(sw, "moveTo");
-                else if (o is CT_OMathPara)
-                    ((CT_OMathPara)o).Write(sw, "oMathPara");
-                else if (o is CT_OMath)
-                    ((CT_OMath)o).Write(sw, "oMath");
-                else if (o is CT_Bookmark && this.itemsElementNameField[i] == ParagraphItemsChoiceType.bookmarkStart)
-                    ((CT_Bookmark)o).Write(sw, "bookmarkStart");
-                else if (o is CT_MarkupRange&& this.itemsElementNameField[i] == ParagraphItemsChoiceType.commentRangeEnd)
-                    ((CT_MarkupRange)o).Write(sw, "commentRangeEnd");
-                else if (o is CT_MarkupRange && this.itemsElementNameField[i] == ParagraphItemsChoiceType.commentRangeStart)
-                    ((CT_MarkupRange)o).Write(sw, "commentRangeStart");
-                else if (o is CT_CustomXmlRun)
-                    ((CT_CustomXmlRun)o).Write(sw, "customXml");
-                else if (o is CT_Markup && this.itemsElementNameField[i] == ParagraphItemsChoiceType.customXmlDelRangeEnd)
-                    ((CT_Markup)o).Write(sw, "customXmlDelRangeEnd");
-                else if (o is CT_TrackChange && this.itemsElementNameField[i] == ParagraphItemsChoiceType.customXmlDelRangeStart)
-                    ((CT_TrackChange)o).Write(sw, "customXmlDelRangeStart");
-                else if (o is CT_Markup && this.itemsElementNameField[i] == ParagraphItemsChoiceType.customXmlInsRangeEnd)
-                    ((CT_Markup)o).Write(sw, "customXmlInsRangeEnd");
-                else if (o is CT_TrackChange && this.itemsElementNameField[i] == ParagraphItemsChoiceType.customXmlInsRangeStart)
-                    ((CT_TrackChange)o).Write(sw, "customXmlInsRangeStart");
-                else if (o is CT_Markup && this.itemsElementNameField[i] == ParagraphItemsChoiceType.customXmlMoveFromRangeEnd)
-                    ((CT_Markup)o).Write(sw, "customXmlMoveFromRangeEnd");
-                else if (o is CT_TrackChange && this.itemsElementNameField[i] == ParagraphItemsChoiceType.customXmlMoveFromRangeStart)
-                    ((CT_TrackChange)o).Write(sw, "customXmlMoveFromRangeStart");
-                else if (o is CT_Markup && this.itemsElementNameField[i] == ParagraphItemsChoiceType.customXmlMoveToRangeEnd)
-                    ((CT_Markup)o).Write(sw, "customXmlMoveToRangeEnd");
-                else if (o is CT_TrackChange && this.itemsElementNameField[i] == ParagraphItemsChoiceType.customXmlMoveToRangeStart)
-                    ((CT_TrackChange)o).Write(sw, "customXmlMoveToRangeStart");
-                else if (o is CT_RunTrackChange && this.itemsElementNameField[i] == ParagraphItemsChoiceType.del)
-                    ((CT_RunTrackChange)o).Write(sw, "del");
-                else if (o is CT_SimpleField)
-                    ((CT_SimpleField)o).Write(sw, "fldSimple");
-                else if (o is CT_Hyperlink1)
-                    ((CT_Hyperlink1)o).Write(sw, "hyperlink");
-                else if (o is CT_RunTrackChange && this.itemsElementNameField[i] == ParagraphItemsChoiceType.ins)
-                    ((CT_RunTrackChange)o).Write(sw, "ins");
-                else if (o is CT_RunTrackChange && this.itemsElementNameField[i] == ParagraphItemsChoiceType.moveFrom)
-                    ((CT_RunTrackChange)o).Write(sw, "moveFrom");
-                else if (o is CT_MarkupRange && this.itemsElementNameField[i] == ParagraphItemsChoiceType.moveFromRangeEnd)
-                    ((CT_MarkupRange)o).Write(sw, "moveFromRangeEnd");
-                else if (o is CT_MarkupRange && this.itemsElementNameField[i] == ParagraphItemsChoiceType.moveToRangeEnd)
-                    ((CT_MarkupRange)o).Write(sw, "moveToRangeEnd");
-                else if (o is CT_MoveBookmark && this.itemsElementNameField[i] == ParagraphItemsChoiceType.moveToRangeStart)
-                    ((CT_MoveBookmark)o).Write(sw, "moveToRangeStart");
-                else if (o is CT_Perm)
-                    ((CT_Perm)o).Write(sw, "permEnd");
-                else if (o is CT_PermStart)
-                    ((CT_PermStart)o).Write(sw, "permStart");
-                else if (o is CT_ProofErr)
-                    ((CT_ProofErr)o).Write(sw, "proofErr");
-                else if (o is CT_R)
-                    ((CT_R)o).Write(sw, "r");
-                else if (o is CT_SdtRun)
-                    ((CT_SdtRun)o).Write(sw, "sdt");
-                else if (o is CT_SmartTagRun)
-                    ((CT_SmartTagRun)o).Write(sw, "smartTag");
-                else if (o is CT_Rel)
-                    ((CT_Rel)o).Write(sw, "subDoc");
+                if (o is CT_MarkupRange range && this.itemsElementNameField[i] == ParagraphItemsChoiceType.bookmarkEnd)
+                    range.Write(sw, "bookmarkEnd");
+                else if (o is CT_MoveBookmark bookmark && this.itemsElementNameField[i] == ParagraphItemsChoiceType.moveFromRangeStart)
+                    bookmark.Write(sw, "moveFromRangeStart");
+                else if (o is CT_RunTrackChange change && this.itemsElementNameField[i] == ParagraphItemsChoiceType.moveTo)
+                    change.Write(sw, "moveTo");
+                else if (o is CT_OMathPara para)
+                    para.Write(sw, "oMathPara");
+                else if (o is CT_OMath math)
+                    math.Write(sw, "oMath");
+                else if (o is CT_Bookmark ctBookmark && this.itemsElementNameField[i] == ParagraphItemsChoiceType.bookmarkStart)
+                    ctBookmark.Write(sw, "bookmarkStart");
+                else if (o is CT_MarkupRange markupRange&& this.itemsElementNameField[i] == ParagraphItemsChoiceType.commentRangeEnd)
+                    markupRange.Write(sw, "commentRangeEnd");
+                else if (o is CT_MarkupRange ctMarkupRange && this.itemsElementNameField[i] == ParagraphItemsChoiceType.commentRangeStart)
+                    ctMarkupRange.Write(sw, "commentRangeStart");
+                else if (o is CT_CustomXmlRun run)
+                    run.Write(sw, "customXml");
+                else if (o is CT_Markup markup && this.itemsElementNameField[i] == ParagraphItemsChoiceType.customXmlDelRangeEnd)
+                    markup.Write(sw, "customXmlDelRangeEnd");
+                else if (o is CT_TrackChange trackChange && this.itemsElementNameField[i] == ParagraphItemsChoiceType.customXmlDelRangeStart)
+                    trackChange.Write(sw, "customXmlDelRangeStart");
+                else if (o is CT_Markup ctMarkup && this.itemsElementNameField[i] == ParagraphItemsChoiceType.customXmlInsRangeEnd)
+                    ctMarkup.Write(sw, "customXmlInsRangeEnd");
+                else if (o is CT_TrackChange ctTrackChange && this.itemsElementNameField[i] == ParagraphItemsChoiceType.customXmlInsRangeStart)
+                    ctTrackChange.Write(sw, "customXmlInsRangeStart");
+                else if (o is CT_Markup markup1 && this.itemsElementNameField[i] == ParagraphItemsChoiceType.customXmlMoveFromRangeEnd)
+                    markup1.Write(sw, "customXmlMoveFromRangeEnd");
+                else if (o is CT_TrackChange change1 && this.itemsElementNameField[i] == ParagraphItemsChoiceType.customXmlMoveFromRangeStart)
+                    change1.Write(sw, "customXmlMoveFromRangeStart");
+                else if (o is CT_Markup ctMarkup1 && this.itemsElementNameField[i] == ParagraphItemsChoiceType.customXmlMoveToRangeEnd)
+                    ctMarkup1.Write(sw, "customXmlMoveToRangeEnd");
+                else if (o is CT_TrackChange trackChange1 && this.itemsElementNameField[i] == ParagraphItemsChoiceType.customXmlMoveToRangeStart)
+                    trackChange1.Write(sw, "customXmlMoveToRangeStart");
+                else if (o is CT_RunTrackChange runTrackChange && this.itemsElementNameField[i] == ParagraphItemsChoiceType.del)
+                    runTrackChange.Write(sw, "del");
+                else if (o is CT_SimpleField field)
+                    field.Write(sw, "fldSimple");
+                else if (o is CT_Hyperlink1 hyperlink1)
+                    hyperlink1.Write(sw, "hyperlink");
+                else if (o is CT_RunTrackChange ctRunTrackChange && this.itemsElementNameField[i] == ParagraphItemsChoiceType.ins)
+                    ctRunTrackChange.Write(sw, "ins");
+                else if (o is CT_RunTrackChange runTrackChange1 && this.itemsElementNameField[i] == ParagraphItemsChoiceType.moveFrom)
+                    runTrackChange1.Write(sw, "moveFrom");
+                else if (o is CT_MarkupRange range1 && this.itemsElementNameField[i] == ParagraphItemsChoiceType.moveFromRangeEnd)
+                    range1.Write(sw, "moveFromRangeEnd");
+                else if (o is CT_MarkupRange markupRange1 && this.itemsElementNameField[i] == ParagraphItemsChoiceType.moveToRangeEnd)
+                    markupRange1.Write(sw, "moveToRangeEnd");
+                else if (o is CT_MoveBookmark moveBookmark && this.itemsElementNameField[i] == ParagraphItemsChoiceType.moveToRangeStart)
+                    moveBookmark.Write(sw, "moveToRangeStart");
+                else if (o is CT_Perm perm)
+                    perm.Write(sw, "permEnd");
+                else if (o is CT_PermStart start)
+                    start.Write(sw, "permStart");
+                else if (o is CT_ProofErr err)
+                    err.Write(sw, "proofErr");
+                else if (o is CT_R r)
+                    r.Write(sw, "r");
+                else if (o is CT_SdtRun sdtRun)
+                    sdtRun.Write(sw, "sdt");
+                else if (o is CT_SmartTagRun tagRun)
+                    tagRun.Write(sw, "smartTag");
+                else if (o is CT_Rel rel)
+                    rel.Write(sw, "subDoc");
                 i++;
             }
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.WriteEndW(nodeName);
         }
 
         [XmlElement("oMath", typeof(CT_OMath), Namespace = "http://schemas.openxmlformats.org/officeDocument/2006/math", Order = 1)]
@@ -1033,10 +1071,8 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal new void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
-            sw.Write(">");
-            if (this.sectPr != null)
-                this.sectPr.Write(sw, "sectPr");
+            sw.WriteStartW(nodeName);
+            sw.Write('>');
             if (this.pPrChange != null)
                 this.pPrChange.Write(sw, "pPrChange");
             if (this.pStyle != null)
@@ -1105,6 +1141,8 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
                 this.outlineLvl.Write(sw, "outlineLvl");
             if (this.rPr != null)
                 this.rPr.Write(sw, "rPr");
+            if(this.sectPr != null)
+                this.sectPr.Write(sw, "sectPr");
             if (this.textDirection != null)
                 this.textDirection.Write(sw, "textDirection");
             if (this.textAlignment != null)
@@ -1116,7 +1154,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
             if (this.cnfStyle != null)
                 this.cnfStyle.Write(sw, "cnfStyle");
 
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.WriteEndW(nodeName);
         }
 
 
@@ -1173,10 +1211,33 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
                 this.numPr = new CT_NumPr();
             return this.numPr;
         }
+        public CT_SectPr AddNewSectPr()
+        {
+            if(this.sectPrField==null)
+            { 
+                this.sectPrField = new CT_SectPr();
+            }
+            return this.sectPrField;
+        }
 
         public bool IsSetSpacing()
         {
             return this.spacing != null;
+        }
+
+        public bool IsSetSectPr()
+        { 
+            return this.sectPr != null;
+        }
+
+        public void UnsetJc()
+        {
+            this.jc=null;
+        }
+
+        public bool IsSetKeepNext()
+        {
+            return this.keepNext!=null;
         }
     }
 
@@ -1963,8 +2024,8 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
-            sw.Write(">");
+            sw.WriteStartW(nodeName);
+            sw.Write('>');
             if (this.ins != null)
                 this.ins.Write(sw, "ins");
             if (this.del != null)
@@ -2053,7 +2114,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
                 this.oMath.Write(sw, "oMath");
             if (this.rPrChange != null)
                 this.rPrChange.Write(sw, "rPrChange");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.WriteEndW(nodeName);
         }
 
 
@@ -2095,14 +2156,14 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal new void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:author", this.author);
             XmlHelper.WriteAttribute(sw, "w:date", this.date);
             XmlHelper.WriteAttribute(sw, "r:id", this.id);
-            sw.Write(">");
+            sw.Write('>');
             if (this.sectPr != null)
                 this.sectPr.Write(sw, "sectPr");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.WriteEndW(nodeName);
         }
 
         [XmlElement(Order = 0)]
@@ -2233,12 +2294,12 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:rsidRPr", this.rsidRPr);
             XmlHelper.WriteAttribute(sw, "w:rsidDel", this.rsidDel);
             XmlHelper.WriteAttribute(sw, "w:rsidR", this.rsidR);
             XmlHelper.WriteAttribute(sw, "w:rsidSect", this.rsidSect);
-            sw.Write(">");
+            sw.Write('>');
             if (this.footnotePr != null)
                 this.footnotePr.Write(sw, "footnotePr");
             if (this.endnotePr != null)
@@ -2277,7 +2338,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
                 this.docGrid.Write(sw, "docGrid");
             if (this.printerSettings != null)
                 this.printerSettings.Write(sw, "printerSettings");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.WriteEndW(nodeName);
         }
 
         [XmlElement(Order = 0)]
@@ -2587,7 +2648,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
     [XmlRoot(Namespace = "http://schemas.openxmlformats.org/wordprocessingml/2006/main", IsNullable = true)]
     public class CT_SectPr
     {
-                private CT_FtnProps footnotePrField;
+        private CT_FtnProps footnotePrField;
 
         private CT_EdnProps endnotePrField;
 
@@ -2637,27 +2698,9 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         public CT_SectPr()
         {
-            //this.sectPrChangeField = new CT_SectPrChange();
-            //this.printerSettingsField = new CT_Rel();
-            this.docGridField = new CT_DocGrid();
-            this.docGrid.type = ST_DocGrid.lines;
-            this.docGrid.typeSpecified = true;
-            this.docGrid.linePitch = "312";
-            
-            //this.rtlGutterField = new CT_OnOff();
-            //this.bidiField = new CT_OnOff();
-            //this.textDirectionField = new CT_TextDirection();
-            //this.titlePgField = new CT_OnOff();
-            //this.noEndnoteField = new CT_OnOff();
-            //this.vAlignField = new CT_VerticalJc();
-            //this.formProtField = new CT_OnOff();
             this.colsField = new CT_Columns();
             this.cols.space = 425;
             this.cols.spaceSpecified = true;
-            //this.pgNumTypeField = new CT_PageNumber();
-            //this.lnNumTypeField = new CT_LineNumber();
-            //this.pgBordersField = new CT_PageBorders();
-            //this.paperSrcField = new CT_PaperSource();
             this.pgMarField = new CT_PageMar();
             this.pgMar.top = 1440;
             this.pgMar.right = 1800;
@@ -3004,6 +3047,31 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
                 this.rsidSectField = value;
             }
         }
+
+        public bool IsSetTitlePg()
+        {
+            return this.titlePgField != null;
+        }
+
+        public bool IsSetPgSz()
+        { 
+            return this.pgSzField != null;
+        }
+
+        public CT_PageSz AddNewPgSz()
+        {
+            if(this.pgSzField == null)
+                this.pgSzField = new CT_PageSz();
+            return this.pgSzField;
+        }
+
+        public CT_OnOff AddNewTitlePg()
+        {
+            if (this.titlePgField == null)
+                this.titlePgField = new CT_OnOff();
+            return this.titlePgField;
+        }
+
         public CT_PageMar AddPageMar()
         {
             this.pgMar = new CT_PageMar();
@@ -3119,12 +3187,12 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:rsidR", this.rsidR);
             XmlHelper.WriteAttribute(sw, "w:rsidRPr", this.rsidRPr);
             XmlHelper.WriteAttribute(sw, "w:rsidSect", this.rsidSect);
             XmlHelper.WriteAttribute(sw, "w:rsidDel", this.rsidDel);
-            sw.Write(">");
+            sw.Write('>');
             if (this.headerReference != null)
             {
                 foreach (CT_HdrFtrRef x in this.headerReference)
@@ -3179,7 +3247,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
                 this.printerSettings.Write(sw, "printerSettings");
             if (this.sectPrChange != null)
                 this.sectPrChange.Write(sw, "sectPrChange");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.WriteEndW(nodeName);
         }
 
 
@@ -3234,8 +3302,8 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
-            sw.Write(">");
+            sw.WriteStartW(nodeName);
+            sw.Write('>');
             if (this.top != null)
                 this.top.Write(sw, "top");
             if (this.left != null)
@@ -3248,7 +3316,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
                 this.between.Write(sw, "between");
             if (this.bar != null)
                 this.bar.Write(sw, "bar");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.WriteEndW(nodeName);
         }
 
 
@@ -3470,7 +3538,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             if(this.beforeField != null)
                 XmlHelper.WriteAttribute(sw, "w:before", (ulong)this.before, true);
             XmlHelper.WriteAttribute(sw, "w:beforeLines", this.beforeLines);
@@ -3644,10 +3712,10 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
         {
             return !(this.lineRuleField == ST_LineSpacingRule.nil);
         }
-        public bool IsSetBetweenLines()
-        {
-            return !string.IsNullOrEmpty(this.lineField);
-        }
+
+        public bool IsSetLine() => !string.IsNullOrEmpty(this.lineField);
+        public bool IsSetBetweenLines() => IsSetLine();
+
         public bool IsSetAfter()
         {
             return !(this.afterField == 0);
@@ -3728,7 +3796,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:leftChars", this.leftChars);
             XmlHelper.WriteAttribute(sw, "w:left", this.left);
             XmlHelper.WriteAttribute(sw, "w:rightChars", this.rightChars);
@@ -3891,6 +3959,16 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
         public bool IsSetFirstLine()
         {
             return !(this.firstLineField==0);
+        }
+
+        public bool IsSetLeftChars()
+        {
+            return this.leftChars!=null;
+        }
+
+        public bool IsSetRightChars()
+        {
+            return this.rightChars!=null;
         }
     }
 
@@ -4079,8 +4157,8 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
-            sw.Write(">");
+            sw.WriteStartW(nodeName);
+            sw.Write('>');
             if (this.rStyle != null)
                 this.rStyle.Write(sw, "rStyle");
             if (this.rFonts != null)
@@ -4161,7 +4239,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
                 this.oMath.Write(sw, "oMath");
             if (this.rPrChange != null)
                 this.rPrChange.Write(sw, "rPrChange");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.WriteEndW(nodeName);
         }
         public CT_String AddNewRStyle()
         {
@@ -4943,6 +5021,50 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
         {
             return this.highlightField != null;
         }
+
+        public bool IsSetVanish()
+        {
+            return this.vanishField != null;
+        }
+
+        public CT_OnOff AddNewVanish()
+        {
+            this.vanishField = new CT_OnOff();
+            return this.vanishField;
+        }
+
+        public bool IsSetRtl()
+        {
+            return this.rtlField != null;
+        }
+
+        public CT_OnOff AddNewRtl()
+        {
+            this.rtlField = new CT_OnOff();
+            return this.rtlField;
+        }
+
+        public bool IsSetW()
+        {
+            return this.w!=null;
+        }
+
+        public CT_TextScale AddNewW()
+        {
+            this.w=new CT_TextScale();
+            return this.w;
+        }
+
+        public bool IsSetEm()
+        {
+            return this.em!=null;
+        }
+
+        public CT_Em AddNewEm()
+        {
+            this.em = new CT_Em();
+            return this.em;
+        }
     }
 
 
@@ -4972,14 +5094,14 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal new void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<{0}", nodeName));
+            sw.WriteStart(nodeName);
             XmlHelper.WriteAttribute(sw, "author", this.author);
             XmlHelper.WriteAttribute(sw, "date", this.date);
             XmlHelper.WriteAttribute(sw, "id", this.id);
-            sw.Write(">");
+            sw.Write('>');
             if (this.rPr != null)
                 this.rPr.Write(sw, "rPr");
-            sw.Write(string.Format("</{0}>", nodeName));
+            sw.WriteEndElement(nodeName);
         }
 
 
@@ -5531,7 +5653,8 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}>", nodeName));
+            sw.WriteStartW(nodeName);
+            sw.Write('>');
             if (this.ins != null)
                 this.ins.Write(sw, "ins");
             if (this.del != null)
@@ -5813,7 +5936,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
                     x.Write(sw, "w");
                 }
             }
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.WriteEndW(nodeName);
         }
 
     }
@@ -5976,14 +6099,14 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal new void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:author", this.author);
             XmlHelper.WriteAttribute(sw, "w:date", this.date);
             XmlHelper.WriteAttribute(sw, "r:id", this.id);
-            sw.Write(">");
+            sw.Write('>');
             if (this.pPr != null)
                 this.pPr.Write(sw, "pPr");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.WriteEndW(nodeName);
         }
 
 
@@ -6208,8 +6331,8 @@ cnfStyleField == null;
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
-            sw.Write(">");
+            sw.WriteStartW(nodeName);
+            sw.Write('>');
             if (this.pStyle != null)
                 this.pStyle.Write(sw, "pStyle");
             if (this.tabs != null && this.tabs.Count > 0)
@@ -6284,7 +6407,7 @@ cnfStyleField == null;
             if (this.cnfStyle != null)
                 this.cnfStyle.Write(sw, "cnfStyle");
 
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.WriteEndW(nodeName);
         }
 
 
@@ -6868,14 +6991,14 @@ cnfStyleField == null;
 
         internal new void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:author", this.author);
             XmlHelper.WriteAttribute(sw, "w:date", this.date);
             XmlHelper.WriteAttribute(sw, "r:id", this.id);
-            sw.Write(">");
+            sw.Write('>');
             if (this.rPr != null)
                 this.rPr.Write(sw, "rPr");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.WriteEndW(nodeName);
         }
 
 
@@ -7311,8 +7434,8 @@ cnfStyleField == null;
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
-            sw.Write(">");
+            sw.WriteStartW(nodeName);
+            sw.Write('>');
             if (this.spacing != null)
             {
                 foreach (CT_SignedTwipsMeasure x in this.spacing)
@@ -7586,7 +7709,7 @@ cnfStyleField == null;
                     x.Write(sw, "imprint");
                 }
             }
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.WriteEndW(nodeName);
         }
 
     }
@@ -7632,11 +7755,12 @@ cnfStyleField == null;
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:type", this.type.ToString());
-            XmlHelper.WriteAttribute(sw, "w:clear", this.clear.ToString());
-            sw.Write(">");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            if(this.clear!= ST_BrClear.none)
+                XmlHelper.WriteAttribute(sw, "w:clear", this.clear.ToString());
+            sw.Write('>');
+            sw.WriteEndW(nodeName);
         }
 
         [XmlAttribute(Form = System.Xml.Schema.XmlSchemaForm.Qualified)]
@@ -7775,9 +7899,9 @@ cnfStyleField == null;
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:type", this.type.ToString());
-            sw.Write(">");
+            sw.Write('>');
             if (this.pPr != null)
                 this.pPr.Write(sw, "pPr");
             if (this.rPr != null)
@@ -7788,7 +7912,7 @@ cnfStyleField == null;
                 this.trPr.Write(sw, "trPr");
             if (this.tcPr != null)
                 this.tcPr.Write(sw, "tcPr");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.WriteEndW(nodeName);
         }
 
         public CT_TblStylePr()

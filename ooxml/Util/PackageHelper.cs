@@ -30,12 +30,11 @@ namespace NPOI.Util
      */
     public class PackageHelper
     {
-
-        public static OPCPackage Open(Stream is1)
+        public static OPCPackage Open(Stream stream, bool readOnly = false)
         {
             try
             {
-                return OPCPackage.Open(is1);
+                return OPCPackage.Open(stream, readOnly);
             }
             catch (InvalidFormatException e)
             {
@@ -135,7 +134,7 @@ namespace NPOI.Util
          * @param src source properties
          * @param tgt target properties
          */
-        private static void CopyProperties(PackageProperties src, PackageProperties tgt)
+        private static void CopyProperties(IPackageProperties src, IPackageProperties tgt)
         {
             tgt.SetCategoryProperty(src.GetCategoryProperty());
             tgt.SetContentStatusProperty(src.GetContentStatusProperty());

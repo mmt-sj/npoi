@@ -41,7 +41,7 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
                 return null;
             CT_Cell ctObj = new CT_Cell();
             ctObj.r = XmlHelper.ReadString(node.Attributes["r"]);
-            ctObj.s = XmlHelper.ReadUInt(node.Attributes["s"]);
+            ctObj.sField = XmlHelper.ReadUInt(node.Attributes["s"]);
             if (node.Attributes["t"] != null)
                 ctObj.t = (ST_CellType)Enum.Parse(typeof(ST_CellType), node.Attributes["t"].Value);
             ctObj.cm = XmlHelper.ReadUInt(node.Attributes["cm"]);
@@ -65,10 +65,10 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<{0}", nodeName));
-
+            sw.WriteStart(nodeName);
             XmlHelper.WriteAttribute(sw, "r", this.r);
-            XmlHelper.WriteAttribute(sw, "s", this.s);
+            if(this.IsSetS())
+                XmlHelper.WriteAttribute(sw, "s", this.s, true);
             if (this.t != ST_CellType.n)
                 XmlHelper.WriteAttribute(sw, "t", this.t.ToString());
             XmlHelper.WriteAttribute(sw, "cm", this.cm);
@@ -83,18 +83,18 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
             }
             else
             {
-                sw.Write(">");
+                sw.Write('>');
                 if (this.f != null)
                     this.f.Write(sw, "f");
                 if (!string.IsNullOrEmpty(this.v))
-                    sw.Write(string.Format("<v>{0}</v>", XmlHelper.EncodeXml(this.v)));
+                    sw.WriteElementAndContent("v", XmlHelper.EncodeXml(this.v));
                 else
                     sw.Write("<v/>");
                 if (this.@is != null)
                     this.@is.Write(sw, "is");
                 if (this.extLst != null)
                     this.extLst.Write(sw, "extLst");
-                sw.Write(string.Format("</{0}>", nodeName));
+                sw.WriteEndElement(nodeName);
             }
         }
 
@@ -129,7 +129,7 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
         }
         public bool IsSetS()
         {
-            return sField != 0;
+            return sField != null && sField != 0;
         }
         public bool IsSetF()
         {

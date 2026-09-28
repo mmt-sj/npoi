@@ -35,9 +35,12 @@ namespace NPOI.POIFS.FileSystem
  */
     public class NPOIFSDocument : POIFSViewable
     {
-        private DocumentProperty _property;
+        //arbitrarily selected; may need to increase
+        private static int MAX_RECORD_LENGTH = 100_000;
 
-        private NPOIFSFileSystem _filesystem;
+        private readonly DocumentProperty _property;
+
+        private readonly NPOIFSFileSystem _filesystem;
         private NPOIFSStream _stream;
         private int _block_size;
 
@@ -146,7 +149,7 @@ namespace NPOI.POIFS.FileSystem
             if (usedInBlock != 0 && usedInBlock != _block_size)
             {
                 int toBlockEnd = _block_size - usedInBlock;
-                byte[] padding = new byte[toBlockEnd];
+                byte[] padding = IOUtils.SafelyAllocate(toBlockEnd, MAX_RECORD_LENGTH);
                 Arrays.Fill(padding, (byte)0xFF);
                 outStream.Write(padding, 0, padding.Length);
             }
@@ -173,7 +176,7 @@ namespace NPOI.POIFS.FileSystem
 
             Stream innerOs = _stream.GetOutputStream();
             DocumentOutputStream os = new DocumentOutputStream(innerOs, size);
-            POIFSDocumentPath path = new POIFSDocumentPath(name.Split(new string[] { "\\\\" }, StringSplitOptions.RemoveEmptyEntries));
+            POIFSDocumentPath path = new POIFSDocumentPath(name.Split([@"\\"], StringSplitOptions.RemoveEmptyEntries));
             String docName = path.GetComponent(path.Length - 1);
             POIFSWriterEvent event1 = new POIFSWriterEvent(os, path, docName, size);
             Writer.ProcessPOIFSWriterEvent(event1);
@@ -257,7 +260,7 @@ namespace NPOI.POIFS.FileSystem
             if (Size > 0)
             {
                 // Get all the data into a single array
-                byte[] data = new byte[Size];
+                byte[] data = IOUtils.SafelyAllocate(Size, MAX_RECORD_LENGTH);
                 int offset = 0;
                 foreach (ByteBuffer buffer in _stream)
                 {
@@ -272,12 +275,12 @@ namespace NPOI.POIFS.FileSystem
         }
 
         /**
-              * Get an Iterator of objects, some of which may implement POIFSViewable
-              *
-              * @return an Iterator; may not be null, but may have an empty back end
-              *		 store
-              */
-        protected IEnumerator GetViewableIterator()
+         * Get an Iterator of objects, some of which may implement POIFSViewable
+         *
+         * @return an Iterator; may not be null, but may have an empty back end
+         *		 store
+         */
+        protected IEnumerator<Object> GetViewableIterator()
         {
             //  return Collections.EMPTY_LIST.iterator();
             return null;
@@ -286,11 +289,11 @@ namespace NPOI.POIFS.FileSystem
 
 
         /**
-    * Provides a short description of the object, to be used when a
-    * POIFSViewable object has not provided its contents.
-    *
-    * @return short description
-    */
+         * Provides a short description of the object, to be used when a
+         * POIFSViewable object has not provided its contents.
+         *
+         * @return short description
+         */
         protected String GetShortDescription()
         {
             StringBuilder buffer = new StringBuilder();
@@ -312,12 +315,12 @@ namespace NPOI.POIFS.FileSystem
             get { return GetShortDescription(); }
         }
 
-        public Array ViewableArray
+        public Object[] ViewableArray
         {
             get { return GetViewableArray(); }
         }
 
-        public IEnumerator ViewableIterator
+        public IEnumerator<Object> ViewableIterator
         {
             get { return GetViewableIterator(); }
         }

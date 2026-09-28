@@ -27,7 +27,8 @@
  * ==============================================================*/
 
 using System;
-using System.Text;
+using System.Text; 
+using Cysharp.Text;
 using System.Collections.Generic;
 
 
@@ -42,17 +43,30 @@ namespace NPOI.Util
     /// @since      May 10, 2002
     /// @version    1.0
     /// </summary>
-    public class StringUtil
+    public static class StringUtil
     {
+        static StringUtil()
+        {
+        #if NETSTANDARD2_1 || NET6_0_OR_GREATER || NETSTANDARD2_0
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+            BIG5 = Encoding.GetEncoding("big5");
+            WIN_1252 = Encoding.GetEncoding("windows-1252");
+        #endif 
+        }
         private static Encoding ISO_8859_1 = Encoding.GetEncoding("ISO-8859-1");
+        //arbitrarily selected; may need to increase
+        private static int MAX_RECORD_LENGTH = 10000000;
+
         private static Encoding UTF16LE = Encoding.Unicode;
+        public static Encoding BIG5;
+        public static Encoding WIN_1252;
         private static Dictionary<int, int> msCodepointToUnicode;
         /**     
          *  Constructor for the StringUtil object     
          */
-        private StringUtil()
-        {
-        }
+        //private StringUtil()
+        //{
+        //}
 
         /// <summary>
         /// Given a byte array of 16-bit unicode characters in Little Endian
@@ -269,13 +283,13 @@ namespace NPOI.Util
 
         public static String ReadCompressedUnicode(ILittleEndianInput in1, int nChars)
         {
-            byte[] buf = new byte[nChars];
+            byte[] buf = IOUtils.SafelyAllocate(nChars, MAX_RECORD_LENGTH);
             in1.ReadFully(buf);
             return ISO_8859_1.GetString(buf);
         }
         public static String ReadUnicodeLE(ILittleEndianInput in1, int nChars)
         {
-            byte[] bytes = new byte[nChars * 2];
+            byte[] bytes = IOUtils.SafelyAllocate(nChars * 2, MAX_RECORD_LENGTH);
             in1.ReadFully(bytes);
             return UTF16LE.GetString(bytes);
         }
@@ -481,7 +495,7 @@ namespace NPOI.Util
 
             if (chr > 127)
                 return true;
-            if (char.IsLetterOrDigit(chr) || reservedChars.IndexOf(chr) >= 0)
+            if (char.IsLetterOrDigit(chr) || reservedChars.Contains(chr))
                 return false;
 
             return true;
@@ -503,15 +517,16 @@ namespace NPOI.Util
             if (string1 == null || "".Equals(string1)) return string1;
             InitMsCodepointMap();
 
-            StringBuilder sb = new StringBuilder();
+            using var sb = ZString.CreateStringBuilder();
+
             int length = string1.Length;
             //char[] stringChars = string1.ToCharArray();
             for (int offset = 0; offset < length;)
             {
 
                 int msCodepoint = char.ConvertToUtf32(string1, offset);//codePointAt(stringChars, offset, string1.Length);
-                int uniCodepoint = msCodepointToUnicode[(msCodepoint)];
-                sb.Append(Char.ConvertFromUtf32(uniCodepoint == null ? msCodepoint : uniCodepoint));
+
+                sb.Append(Char.ConvertFromUtf32(msCodepointToUnicode.TryGetValue(msCodepoint, out var uniCodepoint) ? uniCodepoint : msCodepoint));
                 offset += CharCount(msCodepoint);
             }
 
@@ -853,6 +868,63 @@ namespace NPOI.Util
         public static String Join(String separator, params object[] array)
         {
             return Join(array, separator);
+        }
+
+        /**
+        * Count number of occurrences of needle in haystack
+        * Has same signature as org.apache.commons.lang3.StringUtils#countMatches
+        *
+        * @param haystack  the CharSequence to check, may be null
+        * @param needle    the character to count the quantity of 
+        * @return the number of occurrences, 0 if the CharSequence is null
+        */
+        public static int CountMatches(string haystack, char needle)
+        {
+            if (haystack == null) return 0;
+            int count = 0;
+            int length = haystack.Length;
+            for (int i = 0; i < length; i++)
+            {
+                if (haystack[i] == needle)
+                {
+                    count++;
+                }
+            }
+            return count;
+        }
+        
+        public static int CodePointAt(this string text, int index)
+        {
+            if (!char.IsSurrogate(text[index]))
+            {
+                return (int)text[index];
+            }
+            if (index + 1 < text.Length && char.IsSurrogatePair(text[index], text[index + 1]))
+            {
+                return char.ConvertToUtf32(text[index], text[index+1]);
+            }
+            else
+            {
+                throw new Exception("String was not well-formed UTF-16.");
+            }
+        }
+
+        public static String Trim(string value)
+        {
+            int end = value.Length;
+            int st = 0;
+            //int off = offset;      /* avoid getfield opcode */
+            char[] val = value.ToCharArray();    /* avoid getfield opcode */
+
+            while((st < end) && (val[st] <= ' '))
+            {
+                st++;
+            }
+            while((st < end) && (val[end - 1] <= ' '))
+            {
+                end--;
+            }
+            return ((st > 0) || (end < value.Length)) ? value.Substring(st, end - st) : value;
         }
     }
 }

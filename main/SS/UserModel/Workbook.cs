@@ -17,35 +17,13 @@
 
 namespace NPOI.SS.UserModel
 {
+    using NPOI.SS.Formula.UDF;
+    using NPOI.Util;
     using System;
     using System.Collections;
-    using System.IO;
-    using NPOI.SS.Formula.UDF;
     using System.Collections.Generic;
-    using NPOI.Util;
-
-    public enum SheetState : int
-    {
-        /// <summary>
-        /// Indicates the sheet is visible.
-        /// </summary>
-        Visible = 0,
-
-        /// <summary>
-        /// Indicates the book window is hidden, but can be shown by the user via the user interface.
-        /// </summary>
-        Hidden = 1,
-
-        /// <summary>
-        /// Indicates the sheet is hidden and cannot be shown in the user interface (UI).
-        /// </summary>
-        /// <remarks>
-        /// In Excel this state is only available programmatically in VBA:
-        /// ThisWorkbook.Sheets("MySheetName").Visible = xlSheetVeryHidden
-        /// 
-        /// </remarks>
-        VeryHidden = 2
-    }
+    using System.Data;
+    using System.IO;
 
     /// <summary>
     /// High level interface of a Excel workbook.  This is the first object most users 
@@ -181,21 +159,6 @@ namespace NPOI.SS.UserModel
         /// <summary>
         /// Finds a font that matches the one with the supplied attributes
         /// </summary>
-        /// <param name="boldWeight"></param>
-        /// <param name="color"></param>
-        /// <param name="fontHeight"></param>
-        /// <param name="name"></param>
-        /// <param name="italic"></param>
-        /// <param name="strikeout"></param>
-        /// <param name="typeOffset"></param>
-        /// <param name="underline"></param>
-        /// <returns>the font with the matched attributes or null</returns>
-        [Obsolete("deprecated 3.15 beta 2. Use {@link #findFont(boolean, short, short, String, boolean, boolean, short, byte)} instead.")]
-        IFont FindFont(short boldWeight, short color, short fontHeight, String name, bool italic, bool strikeout, FontSuperScript typeOffset, FontUnderlineType underline);
-
-        /// <summary>
-        /// Finds a font that matches the one with the supplied attributes
-        /// </summary>
         /// <param name="bold"></param>
         /// <param name="color"></param>
         /// <param name="fontHeight"></param>
@@ -241,7 +204,8 @@ namespace NPOI.SS.UserModel
         /// Write out this workbook to an OutPutstream.
         /// </summary>
         /// <param name="stream">the stream you wish to write to</param>
-        void Write(Stream stream, bool leaveOpen);
+        /// <param name="leaveOpen">leave stream open or not</param>
+        void Write(Stream stream, bool leaveOpen = false);
 
         /// <summary>
         /// the total number of defined names in this workbook
@@ -415,7 +379,7 @@ namespace NPOI.SS.UserModel
          * @param sheetIx the sheet index (0-based)
          * @param hidden True to mark the sheet as hidden, false otherwise
          */
-        void SetSheetHidden(int sheetIx, SheetState hidden);
+        void SetSheetHidden(int sheetIx, SheetVisibility hidden);
 
         /**
          * Hide or unhide a sheet.
@@ -427,7 +391,29 @@ namespace NPOI.SS.UserModel
          * @param sheetIx The sheet number
          * @param hidden 0 for not hidden, 1 for hidden, 2 for very hidden
          */
+        [Obsolete]
         void SetSheetHidden(int sheetIx, int hidden);
+
+        /**
+         * Get the visibility (visible, hidden, very hidden) of a sheet in this workbook
+         *
+         * @param sheetIx  the index of the sheet
+         * @return the sheet visibility
+         * @since POI 3.16 beta 2
+         */
+        SheetVisibility GetSheetVisibility(int sheetIx);
+
+        /**
+         * Hide or unhide a sheet.
+         *
+         * Please note that the sheet currently set as active sheet (sheet 0 in a newly 
+         * created workbook or the one set via setActiveSheet()) cannot be hidden.
+         *  
+         * @param sheetIx     the sheet index (0-based)
+         * @param visibility  the sheet visibility to set
+         * @since POI 3.16 beta 2
+         */
+        void SetSheetVisibility(int sheetIx, SheetVisibility visibility);
 
         /// <summary>
         /// Register a new toolpack in this workbook.
@@ -443,11 +429,33 @@ namespace NPOI.SS.UserModel
         /// <returns>True if the date systems used in the workbook starts in 1904</returns>
         bool IsDate1904();
 
-        void Close();
+        //void Close();
 
         /// <summary>
         /// Returns the spreadsheet version (EXCLE97) of this workbook
         /// </summary>
         SpreadsheetVersion SpreadsheetVersion { get; }
+
+        /// <summary>
+        /// Adds an OLE package manager object with the given content to the sheet
+        /// </summary>
+        /// <param name="oleData">the payload</param>
+        /// <param name="label">the label of the payload</param>
+        /// <param name="fileName">the original filename</param>
+        /// <param name="command">the command to open the payload</param>
+        /// <return>the index of the added ole object, i.e. the storage id</return>
+        /// <exception cref="IOException">if the object can't be embedded</exception>
+        int AddOlePackage(byte[] oleData, String label, String fileName, String command);
+
+        DataSet ToDataSet(bool firstRowAsHeader = false, bool showCalculatedValue = false);
+
+        /// <summary>
+        /// Gets a sheet by name
+        /// </summary>
+        /// <param name="name">The sheet name</param>
+        /// <returns>The sheet or null if not found</returns>
+        ISheet this[string name] { get; }
+
+        bool ForceFormulaRecalculation { get; set; }
     }
 }

@@ -17,11 +17,12 @@
 namespace NPOI.SS.UserModel
 {
     using System;
-    using System.Text;
+    using System.Text; 
+using Cysharp.Text;
     using NPOI.HSSF.Util;
     using NPOI.SS.UserModel;
     using NPOI.Util;
-    using SixLabors.ImageSharp.PixelFormats;
+    using SkiaSharp;
 
     /**
      * Represents a XSSF-style color (based on either a
@@ -30,9 +31,9 @@ namespace NPOI.SS.UserModel
      */
     public abstract class ExtendedColor : IColor
     {
-        protected void SetColor(Rgb24 clr)
+        protected void SetColor(SKColor clr)
         {
-            RGB = (new byte[] { clr.R, clr.G, clr.B });
+            RGB = (new byte[] { clr.Red, clr.Green, clr.Blue });
         }
 
         /**
@@ -83,32 +84,27 @@ namespace NPOI.SS.UserModel
         /**
          * RGB or ARGB or null
          */
-        protected abstract byte[] StoredRBG { get; }
+        protected abstract byte[] StoredRGB { get; }
 
 
         protected byte[] GetRGBOrARGB()
         {
             if (IsIndexed && Index > 0)
             {
-                int indexNum = Index;
-                var hashIndex = HSSFColor.GetIndexHash();
-                HSSFColor indexed = null;
-                if (hashIndex.ContainsKey(indexNum))
-                    indexed = hashIndex[indexNum];
-                if (indexed != null)
+                byte[] rgb = IndexedRGB;
+                if (rgb != null)
                 {
-                    byte[] rgb = new byte[3];
-                    rgb[0] = (byte)indexed.GetTriplet()[0];
-                    rgb[1] = (byte)indexed.GetTriplet()[1];
-                    rgb[2] = (byte)indexed.GetTriplet()[2];
                     return rgb;
                 }
             }
 
             // Grab the colour
-            return StoredRBG;
+            return StoredRGB;
         }
-
+        /// <summary>
+        /// </summary>
+        /// <returns>index color RGB bytes, if <see cref="isIndexed()" /> == true, null if not indexed or index is invalid</returns>
+        protected abstract byte[] IndexedRGB { get; }
         /**
          * Standard Red Green Blue ctColor value (RGB) with applied tint.
          * Alpha values are ignored.
@@ -117,9 +113,10 @@ namespace NPOI.SS.UserModel
         {
             get
             {
-                byte[] rgb = StoredRBG;
+                byte[] rgb = StoredRGB;
                 if (rgb != null)
                 {
+                    rgb = (byte[])rgb.Clone();
                     if (rgb.Length == 4)
                     {
                         byte[] tmp = new byte[3];
@@ -154,8 +151,9 @@ namespace NPOI.SS.UserModel
                 {
                     return null;
                 }
-                StringBuilder sb = new StringBuilder();
-                foreach (byte c in rgb)
+                using var sb = ZString.CreateStringBuilder();
+
+                foreach(byte c in rgb)
                 {
                     int i = c & 0xff;
                     String cs = string.Format("{0:x}", i);

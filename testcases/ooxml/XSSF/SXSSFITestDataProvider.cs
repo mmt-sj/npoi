@@ -26,14 +26,12 @@ namespace NPOI.XSSF
     using NPOI.SS.UserModel;
     using NPOI.XSSF.Streaming;
     using NPOI.XSSF.UserModel;
-    using NUnit.Framework;
     using TestCases;
     using TestCases.SS;
 
     /**
      * @author Yegor Kozlov
      */
-    [TestFixture]
     public class SXSSFITestDataProvider : ITestDataProvider
     {
         public static SXSSFITestDataProvider instance = new SXSSFITestDataProvider();
@@ -57,24 +55,29 @@ namespace NPOI.XSSF
 
         public IWorkbook WriteOutAndReadBack(IWorkbook wb)
         {
-            if (!(wb is SXSSFWorkbook))
+            // wb is usually an SXSSFWorkbook, but must also work on an XSSFWorkbook
+            // since workbooks must be able to be written out and read back
+            // several times in succession
+            if (!(wb is SXSSFWorkbook || wb is XSSFWorkbook))
             {
-                throw new ArgumentException("Expected an instance of SXSSFWorkbook");
+                throw new ArgumentException("Expected an instance of XSSFWorkbook or SXSSFWorkbook");
             }
 
-            XSSFWorkbook result;
             try
             {
-                MemoryStream baos = new MemoryStream(8192);
-                wb.Write(baos, false);
-                Stream is1 = new MemoryStream(baos.ToArray());
-                result = new XSSFWorkbook(is1);
+                using(MemoryStream baos = new MemoryStream(8192))
+                {
+                    wb.Write(baos, false);
+                    using(Stream is1 = new MemoryStream(baos.ToArray()))
+                    {
+                        return new XSSFWorkbook(is1);
+                    }
+                }
             }
             catch (IOException e)
             {
                 throw new Exception(e.Message, e);
             }
-            return result;
         }
 
         public IWorkbook CreateWorkbook()

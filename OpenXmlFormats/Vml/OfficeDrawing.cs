@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Xml.Serialization;
 using NPOI.OpenXmlFormats.Vml.Spreadsheet;
@@ -1722,7 +1722,7 @@ namespace NPOI.OpenXmlFormats.Vml.Office
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<o:{0}", nodeName));
+            sw.WriteStart("o", nodeName);
             if(this.ext != ST_Ext.NONE)
                 XmlHelper.WriteAttribute(sw, "v:ext", this.ext.ToString());
             NPOI.OpenXmlFormats.Util.XmlHelper.WriteAttribute(sw, "position", this.position);
@@ -2238,16 +2238,16 @@ namespace NPOI.OpenXmlFormats.Vml.Office
 
         public void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<o:{0}", nodeName));
+            sw.WriteStart("o", nodeName);
             XmlHelper.WriteAttribute(sw, "v:ext", this.ext.ToString());
-            sw.Write(">");
+            sw.Write('>');
             if (this.idmap != null)
                 this.idmap.Write(sw, "idmap");
             if (this.regrouptable != null)
                 this.regrouptable.Write(sw, "regrouptable");
             if (this.rules != null)
                 this.rules.Write(sw, "rules");
-            sw.Write(string.Format("</o:{0}>", nodeName));
+            sw.WriteEndElement("o", nodeName);
         }
 
     }
@@ -2300,7 +2300,7 @@ namespace NPOI.OpenXmlFormats.Vml.Office
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<o:{0}", nodeName));
+            sw.WriteStart("o", nodeName);
             XmlHelper.WriteAttribute(sw, "v:ext", this.ext.ToString());
             XmlHelper.WriteAttribute(sw, "data", this.data);
             sw.Write("/>");
@@ -2336,9 +2336,9 @@ namespace NPOI.OpenXmlFormats.Vml.Office
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<o:{0}", nodeName));
+            sw.WriteStart("o", nodeName);
             XmlHelper.WriteAttribute(sw, "v:ext", this.ext.ToString());
-            sw.Write(">");
+            sw.Write('>');
             if (this.entry != null)
             {
                 foreach (CT_Entry x in this.entry)
@@ -2346,7 +2346,7 @@ namespace NPOI.OpenXmlFormats.Vml.Office
                     x.Write(sw, "entry");
                 }
             }
-            sw.Write(string.Format("</o:{0}>", nodeName));
+            sw.WriteEndElement("o", nodeName);
         }
 
 
@@ -2385,10 +2385,10 @@ namespace NPOI.OpenXmlFormats.Vml.Office
         private int? oldField = null;
 
         [XmlAttribute]
-        public int @new
+        public int? @new
         {
-            get { return (int)this.newField; }
-            set { this.newField = value; }
+            get { return newField; }
+            set { newField = value; }
         }
         [XmlIgnore]
         public bool newSpecified
@@ -2397,10 +2397,10 @@ namespace NPOI.OpenXmlFormats.Vml.Office
         }
 
         [XmlAttribute]
-        public int old
+        public int? old
         {
-            get { return (int)this.oldField; }
-            set { this.oldField = value; }
+            get { return oldField; }
+            set { oldField = value; }
         }
         [XmlIgnore]
         public bool oldSpecified
@@ -2423,11 +2423,20 @@ namespace NPOI.OpenXmlFormats.Vml.Office
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<o:{0}", nodeName));
-            XmlHelper.WriteAttribute(sw, "new", this.@new);
-            XmlHelper.WriteAttribute(sw, "old", this.old);
-            sw.Write(">");
-            sw.Write(string.Format("</o:{0}>", nodeName));
+            sw.WriteStart("o", nodeName);
+            
+            if(@new.HasValue)
+            {
+                XmlHelper.WriteAttribute(sw, "new", @new.Value);
+            }
+
+            if(old.HasValue)
+            {
+                XmlHelper.WriteAttribute(sw, "old", old.Value);
+            }
+
+            sw.Write('>');
+            sw.WriteEndElement("o", nodeName);
         }
 
     }
@@ -2483,10 +2492,10 @@ namespace NPOI.OpenXmlFormats.Vml.Office
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<o:{0}", nodeName));
+            sw.WriteStart("o", nodeName);
             if(this.ext!= ST_Ext.NONE)
                 XmlHelper.WriteAttribute(sw, "v:ext", this.ext.ToString());
-            sw.Write(">");
+            sw.Write('>');
             if (this.r != null)
             {
                 foreach (CT_R x in this.r)
@@ -2494,7 +2503,7 @@ namespace NPOI.OpenXmlFormats.Vml.Office
                     x.Write(sw, "r");
                 }
             }
-            sw.Write(string.Format("</o:{0}>", nodeName));
+            sw.WriteEndElement("o", nodeName);
         }
 
     }
@@ -2588,14 +2597,14 @@ namespace NPOI.OpenXmlFormats.Vml.Office
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<o:{0}", nodeName));
+            sw.WriteStart("o", nodeName);
             XmlHelper.WriteAttribute(sw, "id", this.id);
             if(this.type!=ST_RType.NONE)
                 XmlHelper.WriteAttribute(sw, "type", this.type.ToString());
             if (this.how != ST_How.NONE)
                 XmlHelper.WriteAttribute(sw, "how", this.how.ToString());
             XmlHelper.WriteAttribute(sw, "idref", this.idref);
-            sw.Write(">");
+            sw.Write('>');
             if (this.proxy != null)
             {
                 foreach (CT_Proxy x in this.proxy)
@@ -2603,7 +2612,7 @@ namespace NPOI.OpenXmlFormats.Vml.Office
                     x.Write(sw, "proxy");
                 }
             }
-            sw.Write(string.Format("</o:{0}>", nodeName));
+            sw.WriteEndElement("o", nodeName);
         }
     }
 
@@ -2691,13 +2700,13 @@ namespace NPOI.OpenXmlFormats.Vml.Office
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<o:{0}", nodeName));
+            sw.WriteStart("o", nodeName);
             NPOI.OpenXmlFormats.Util.XmlHelper.WriteAttribute(sw, "start", this.start);
             NPOI.OpenXmlFormats.Util.XmlHelper.WriteAttribute(sw, "end", this.end);
             XmlHelper.WriteAttribute(sw, "idref", this.idref);
             XmlHelper.WriteAttribute(sw, "connectloc", this.connectloc);
-            sw.Write(">");
-            sw.Write(string.Format("</o:{0}>", nodeName));
+            sw.Write('>');
+            sw.WriteEndElement("o", nodeName);
         }
 
 

@@ -164,7 +164,27 @@ namespace NPOI.XWPF.UserModel
             }
 
         }
+        public CT_Styles GetCTStyles()
+        {
+            return ctStyles;
+        }
 
+
+        /// <summary>
+        /// remove the specified style if present
+        /// </summary>
+        /// <param name="pos"></param>
+        /// <returns></returns>
+        public bool RemoveStyle(int pos)
+        {
+            if(pos >= 0 && pos < NumberOfStyles)
+            {
+                listStyle.RemoveAt(pos);
+                ctStyles.RemoveStyle(pos);
+                return true;
+            }
+            return false;
+        }
         /**
          * Checks whether style with styleID exist
          * @param styleID		styleID of the Style in the style-Document
@@ -172,13 +192,9 @@ namespace NPOI.XWPF.UserModel
          */
         public bool StyleExist(String styleID)
         {
-            foreach (XWPFStyle style in listStyle)
-            {
-                if (style.StyleId.Equals(styleID))
-                    return true;
-            }
-            return false;
+            return null != GetStyle(styleID);
         }
+
         /**
          * add a style to the document
          * @param style				
@@ -191,6 +207,7 @@ namespace NPOI.XWPF.UserModel
             int pos = (ctStyles.GetStyleList().Count) - 1;
             ctStyles.SetStyleArray(pos, style.GetCTStyle());
         }
+
         /**
          *get style by a styleID 
          * @param styleID	styleID of the searched style
@@ -200,12 +217,18 @@ namespace NPOI.XWPF.UserModel
         {
             foreach (XWPFStyle style in listStyle)
             {
-                if (style.StyleId.Equals(styleID))
-                    return style;
+                try
+                {
+                    if (style.StyleId?.Equals(styleID) ?? false)
+                        return style;
+                }
+                catch (NullReferenceException)
+                {
+                    // Ignore NPE
+                }
             }
             return null;
         }
-
         /**
          *get the style with the specified name, if any.
          * @param styleName The name of the style to get, e.g., "Heading 1"
@@ -341,6 +364,11 @@ namespace NPOI.XWPF.UserModel
             }
             return null;
 
+        }
+
+        public List<XWPFStyle> GetStyles()
+        {
+            return listStyle;
         }
 
         /**

@@ -15,30 +15,31 @@
    limitations under the License.
 ==================================================================== */
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+using NPOI.SS.Formula.Eval;
+
 namespace NPOI.SS.Formula
 {
-
-    using System;
-    using System.Collections;
-    using System.Text;
-    using NPOI.SS.Formula.Eval;
-
     /**
      * Stores details about the current evaluation of a cell.<br/>
      */
-    class CellEvaluationFrame
+    internal sealed class CellEvaluationFrame
     {
-
-        private FormulaCellCacheEntry _cce;
-        private ArrayList _sensitiveInputCells;
+        private readonly FormulaCellCacheEntry _cce;
+        private readonly HashSet<CellCacheEntry> _sensitiveInputCells;
         private FormulaUsedBlankCellSet _usedBlankCellGroup;
 
         public CellEvaluationFrame(FormulaCellCacheEntry cce)
         {
             _cce = cce;
-            _sensitiveInputCells = new ArrayList();
+            _sensitiveInputCells = [];
         }
-        public CellCacheEntry GetCCE()
+
+        public FormulaCellCacheEntry GetCCE()
         {
             return _cce;
         }
@@ -68,17 +69,15 @@ namespace NPOI.SS.Formula
             {
                 return CellCacheEntry.EMPTY_ARRAY;
             }
-            CellCacheEntry[] result = new CellCacheEntry[nItems];
-            result = (CellCacheEntry[])_sensitiveInputCells.ToArray(typeof(CellCacheEntry));
-            return result;
+            return _sensitiveInputCells.ToArray();
         }
-        public void AddUsedBlankCell(int bookIndex, int sheetIndex, int rowIndex, int columnIndex)
+        public void AddUsedBlankCell(IEvaluationWorkbook evalWorkbook, int bookIndex, int sheetIndex, int rowIndex, int columnIndex)
         {
             if (_usedBlankCellGroup == null)
             {
                 _usedBlankCellGroup = new FormulaUsedBlankCellSet();
             }
-            _usedBlankCellGroup.AddCell(bookIndex, sheetIndex, rowIndex, columnIndex);
+            _usedBlankCellGroup.AddCell(evalWorkbook, bookIndex, sheetIndex, rowIndex, columnIndex);
         }
 
         public void UpdateFormulaResult(ValueEval result)

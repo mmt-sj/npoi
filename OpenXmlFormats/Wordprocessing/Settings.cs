@@ -22,7 +22,6 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
                 return null;
             CT_Settings ctObj = new CT_Settings();
             ctObj.activeWritingStyle = new List<CT_WritingStyle>();
-            ctObj.docVars = new List<CT_DocVar>();
             ctObj.attachedSchema = new List<CT_String>();
             ctObj.smartTagType = new List<CT_SmartTagType>();
             ctObj.schemaLibrary = new List<CT_Schema>();
@@ -219,7 +218,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
                 else if (childNode.LocalName == "activeWritingStyle")
                     ctObj.activeWritingStyle.Add(CT_WritingStyle.Parse(childNode, namespaceManager));
                 else if (childNode.LocalName == "docVars")
-                    ctObj.docVars.Add(CT_DocVar.Parse(childNode, namespaceManager));
+                    ctObj.docVars = CT_DocVars.Parse(childNode, namespaceManager);
                 else if (childNode.LocalName == "attachedSchema")
                     ctObj.attachedSchema.Add(CT_String.Parse(childNode, namespaceManager));
                 else if (childNode.LocalName == "smartTagType")
@@ -235,8 +234,10 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
         internal void Write(StreamWriter sw)
         {
             sw.WriteLine("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
-            sw.Write("<w:settings xmlns:o=\"urn:schemas-microsoft-com:office:office\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" ");
-            sw.Write("xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:w10=\"urn:schemas-microsoft-com:office:word\" xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:sl=\"http://schemas.openxmlformats.org/schemaLibrary/2006/main\">");
+            sw.Write("<w:settings mc:Ignorable=\"w14 w15\" xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\" xmlns:o=\"urn:schemas-microsoft-com:office:office\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" ");
+            sw.Write("xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:w10=\"urn:schemas-microsoft-com:office:word\" xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:sl=\"http://schemas.openxmlformats.org/schemaLibrary/2006/main\" ");
+            sw.Write("xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\">");
+            
             if (this.writeProtection != null)
                 this.writeProtection.Write(sw, "writeProtection");
             if (this.view != null)
@@ -433,12 +434,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
                 }
             }
             if (this.docVars != null)
-            {
-                foreach (CT_DocVar x in this.docVars)
-                {
-                    x.Write(sw, "docVars");
-                }
-            }
+                this.docVars.Write(sw, "docVars");
             if (this.attachedSchema != null)
             {
                 foreach (CT_String x in this.attachedSchema)
@@ -625,7 +621,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         private CT_Compat compatField;
 
-        private List<CT_DocVar> docVarsField;
+        private CT_DocVars docVarsField;
 
         private CT_DocRsids rsidsField;
 
@@ -669,7 +665,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
             this.decimalSymbolField = new CT_String();
             this.decimalSymbol.val = ".";
             //this.doNotEmbedSmartTagsField = new CT_OnOff();
-            this.shapeDefaultsField = new System.Xml.XmlElement[0];
+            this.shapeDefaultsField = [];
             //this.schemaLibraryField = new List<CT_Schema>();
             //this.smartTagTypeField = new List<CT_SmartTagType>();
             //this.readModeInkLockDownField = new CT_ReadingModeInkLockDown();
@@ -1840,9 +1836,8 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
             }
         }
 
-        [XmlArray(Order = 81)]
-        [XmlArrayItem("docVar", IsNullable = false)]
-        public List<CT_DocVar> docVars
+        [XmlElement(Order = 81)]
+        public CT_DocVars docVars
         {
             get
             {
@@ -2181,7 +2176,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:recommended", this.recommended.ToString());
             XmlHelper.WriteAttribute(sw, "w:cryptProviderType", this.cryptProviderType.ToString());
             XmlHelper.WriteAttribute(sw, "w:cryptAlgorithmClass", this.cryptAlgorithmClass.ToString());
@@ -2195,8 +2190,8 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
             XmlHelper.WriteAttribute(sw, "w:cryptProviderTypeExtSource", this.cryptProviderTypeExtSource);
             XmlHelper.WriteAttribute(sw, "w:hash", this.hash);
             XmlHelper.WriteAttribute(sw, "w:salt", this.salt);
-            sw.Write(">");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.Write('>');
+            sw.WriteEndW(nodeName);
         }
 
         [XmlAttribute(Form = System.Xml.Schema.XmlSchemaForm.Qualified)]
@@ -2477,10 +2472,10 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:val", this.val.ToString());
-            sw.Write(">");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.Write('>');
+            sw.WriteEndW(nodeName);
         }
 
         [XmlAttribute(Form = System.Xml.Schema.XmlSchemaForm.Qualified)]
@@ -2549,7 +2544,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             if (this.val!= ST_Zoom.none)
                 XmlHelper.WriteAttribute(sw, "w:val", this.val.ToString());
             XmlHelper.WriteAttribute(sw, "w:percent", this.percent);
@@ -2662,15 +2657,15 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:lang", this.lang);
             XmlHelper.WriteAttribute(sw, "w:vendorID", this.vendorID);
             XmlHelper.WriteAttribute(sw, "w:dllVersion", this.dllVersion);
             XmlHelper.WriteAttribute(sw, "w:nlCheck", this.nlCheck.ToString());
             XmlHelper.WriteAttribute(sw, "w:checkStyle", this.checkStyle.ToString());
             XmlHelper.WriteAttribute(sw, "w:appName", this.appName);
-            sw.Write(">");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.Write('>');
+            sw.WriteEndW(nodeName);
         }
 
         [XmlAttribute(Form = System.Xml.Schema.XmlSchemaForm.Qualified)]
@@ -2796,11 +2791,10 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:spelling", this.spelling.ToString());
             XmlHelper.WriteAttribute(sw, "w:grammar", this.grammar.ToString());
-            sw.Write(">");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.Write("/>");
         }
 
         [XmlAttribute(Form = System.Xml.Schema.XmlSchemaForm.Qualified)]
@@ -2892,10 +2886,10 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:val", this.val.ToString());
-            sw.Write(">");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.Write('>');
+            sw.WriteEndW(nodeName);
         }
 
         [XmlAttribute(Form = System.Xml.Schema.XmlSchemaForm.Qualified)]
@@ -3014,8 +3008,8 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
-            sw.Write(">");
+            sw.WriteStartW(nodeName);
+            sw.Write('>');
             if (this.mainDocumentType != null)
                 this.mainDocumentType.Write(sw, "mainDocumentType");
             if (this.linkToQuery != null)
@@ -3048,7 +3042,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
                 this.checkErrors.Write(sw, "checkErrors");
             if (this.odso != null)
                 this.odso.Write(sw, "odso");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.WriteEndW(nodeName);
         }
 
         public CT_MailMerge()
@@ -3303,10 +3297,10 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:val", this.val.ToString());
-            sw.Write(">");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.Write('>');
+            sw.WriteEndW(nodeName);
         }
 
         [XmlAttribute(Form = System.Xml.Schema.XmlSchemaForm.Qualified)]
@@ -3371,10 +3365,10 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:val", this.val.ToString());
-            sw.Write(">");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.Write('>');
+            sw.WriteEndW(nodeName);
         }
 
         [XmlAttribute(Form = System.Xml.Schema.XmlSchemaForm.Qualified)]
@@ -3439,10 +3433,10 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:val", this.val.ToString());
-            sw.Write(">");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.Write('>');
+            sw.WriteEndW(nodeName);
         }
 
         [XmlAttribute(Form = System.Xml.Schema.XmlSchemaForm.Qualified)]
@@ -3546,8 +3540,8 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
-            sw.Write(">");
+            sw.WriteStartW(nodeName);
+            sw.Write('>');
             if (this.udl != null)
                 this.udl.Write(sw, "udl");
             if (this.table != null)
@@ -3574,7 +3568,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
                     x.Write(sw, "recipientData");
                 }
             }
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.WriteEndW(nodeName);
         }
 
 
@@ -3706,10 +3700,10 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:val", this.val.ToString());
-            sw.Write(">");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.Write('>');
+            sw.WriteEndW(nodeName);
         }
 
         [XmlAttribute(Form = System.Xml.Schema.XmlSchemaForm.Qualified)]
@@ -3806,8 +3800,8 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
-            sw.Write(">");
+            sw.WriteStartW(nodeName);
+            sw.Write('>');
             if (this.type != null)
                 this.type.Write(sw, "type");
             if (this.name != null)
@@ -3820,7 +3814,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
                 this.lid.Write(sw, "lid");
             if (this.dynamicAddress != null)
                 this.dynamicAddress.Write(sw, "dynamicAddress");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.WriteEndW(nodeName);
         }
 
         public CT_OdsoFieldMapData()
@@ -3935,10 +3929,10 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:val", this.val.ToString());
-            sw.Write(">");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.Write('>');
+            sw.WriteEndW(nodeName);
         }
 
         [XmlAttribute(Form = System.Xml.Schema.XmlSchemaForm.Qualified)]
@@ -4020,14 +4014,14 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:markup", this.markup.ToString());
             XmlHelper.WriteAttribute(sw, "w:comments", this.comments.ToString());
             XmlHelper.WriteAttribute(sw, "w:insDel", this.insDel.ToString());
             XmlHelper.WriteAttribute(sw, "w:formatting", this.formatting.ToString());
             XmlHelper.WriteAttribute(sw, "w:inkAnnotations", this.inkAnnotations.ToString());
-            sw.Write(">");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.Write('>');
+            sw.WriteEndW(nodeName);
         }
 
         [XmlAttribute(Form = System.Xml.Schema.XmlSchemaForm.Qualified)]
@@ -4181,15 +4175,15 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         private bool enforcementFieldSpecified;
 
-        private ST_CryptProv cryptProviderTypeField;
+        private ST_CryptProv? cryptProviderTypeField;
 
         private bool cryptProviderTypeFieldSpecified;
 
-        private ST_AlgClass cryptAlgorithmClassField;
+        private ST_AlgClass? cryptAlgorithmClassField;
 
         private bool cryptAlgorithmClassFieldSpecified;
 
-        private ST_AlgType cryptAlgorithmTypeField;
+        private ST_AlgType? cryptAlgorithmTypeField;
 
         private bool cryptAlgorithmTypeFieldSpecified;
 
@@ -4243,13 +4237,16 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:edit", this.edit.ToString());
             XmlHelper.WriteAttribute(sw, "w:formatting", this.formatting.ToString());
             XmlHelper.WriteAttribute(sw, "w:enforcement", this.enforcement.ToString());
-            XmlHelper.WriteAttribute(sw, "w:cryptProviderType", this.cryptProviderType.ToString());
-            XmlHelper.WriteAttribute(sw, "w:cryptAlgorithmClass", this.cryptAlgorithmClass.ToString());
-            XmlHelper.WriteAttribute(sw, "w:cryptAlgorithmType", this.cryptAlgorithmType.ToString());
+            if (this.cryptProviderType != null)
+                XmlHelper.WriteAttribute(sw, "w:cryptProviderType", this.cryptProviderType.ToString());
+            if (this.cryptAlgorithmClass != null)
+                XmlHelper.WriteAttribute(sw, "w:cryptAlgorithmClass", this.cryptAlgorithmClass.ToString());
+            if (this.cryptAlgorithmType != null)
+                XmlHelper.WriteAttribute(sw, "w:cryptAlgorithmType", this.cryptAlgorithmType.ToString());
             XmlHelper.WriteAttribute(sw, "w:cryptAlgorithmSid", this.cryptAlgorithmSid);
             XmlHelper.WriteAttribute(sw, "w:cryptSpinCount", this.cryptSpinCount);
             XmlHelper.WriteAttribute(sw, "w:cryptProvider", this.cryptProvider);
@@ -4343,7 +4340,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
         }
 
         [XmlAttribute(Form = System.Xml.Schema.XmlSchemaForm.Qualified)]
-        public ST_CryptProv cryptProviderType
+        public ST_CryptProv? cryptProviderType
         {
             get
             {
@@ -4369,7 +4366,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
         }
 
         [XmlAttribute(Form = System.Xml.Schema.XmlSchemaForm.Qualified)]
-        public ST_AlgClass cryptAlgorithmClass
+        public ST_AlgClass? cryptAlgorithmClass
         {
             get
             {
@@ -4395,7 +4392,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
         }
 
         [XmlAttribute(Form = System.Xml.Schema.XmlSchemaForm.Qualified)]
-        public ST_AlgType cryptAlgorithmType
+        public ST_AlgType? cryptAlgorithmType
         {
             get
             {
@@ -4536,6 +4533,22 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
                 this.saltField = value;
             }
         }
+
+        public bool IsSetCryptProviderType() => cryptProviderType != null;
+        public bool IsSetCryptAlgorithmClass() => cryptAlgorithmClass != null;
+        public bool IsSetCryptAlgorithmType() => cryptAlgorithmType != null;
+        public bool IsSetCryptAlgorithmSid() => !string.IsNullOrEmpty(cryptAlgorithmSid);
+        public bool IsSetCryptSpinCount() => !string.IsNullOrEmpty(cryptSpinCount);
+        public bool IsSetHash() => !string.IsNullOrEmpty(hash);
+        public bool IsSetSalt() => !string.IsNullOrEmpty(salt);
+
+        public void UnsetCryptProviderType() => cryptProviderType = null;
+        public void UnsetCryptAlgorithmClass() => cryptAlgorithmClass = null;
+        public void UnsetCryptAlgorithmType() => cryptAlgorithmType = null;
+        public void UnsetCryptAlgorithmSid() => cryptAlgorithmSid = null;
+        public void UnsetCryptSpinCount() => cryptSpinCount = null;
+        public void UnsetHash() => hash = null;
+        public void UnsetSalt() => salt = null;
     }
 
 
@@ -4585,7 +4598,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:val", this.val.ToString());
             sw.Write("/>");
         }
@@ -4645,11 +4658,11 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:lang", this.lang);
             XmlHelper.WriteAttribute(sw, "w:val", this.val);
-            sw.Write(">");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.Write('>');
+            sw.WriteEndW(nodeName);
         }
 
         [XmlAttribute(Form = System.Xml.Schema.XmlSchemaForm.Qualified)]
@@ -4704,11 +4717,11 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "r:id", this.id);
             XmlHelper.WriteAttribute(sw, "w:solutionID", this.solutionID);
-            sw.Write(">");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.Write('>');
+            sw.WriteEndW(nodeName);
         }
 
         [XmlAttribute(Form = System.Xml.Schema.XmlSchemaForm.Qualified, Namespace = "http://schemas.openxmlformats.org/officeDocument/2006/relationships")]
@@ -5020,8 +5033,8 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
-            sw.Write(">");
+            sw.WriteStartW(nodeName);
+            sw.Write('>');
             if (this.useSingleBorderforContiguousCells != null)
                 this.useSingleBorderforContiguousCells.Write(sw, "useSingleBorderforContiguousCells");
             if (this.wpJustification != null)
@@ -5152,7 +5165,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
                 this.useAnsiKerningPairs.Write(sw, "useAnsiKerningPairs");
             if (this.cachedColBalance != null)
                 this.cachedColBalance.Write(sw, "cachedColBalance");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.WriteEndW(nodeName);
         }
 
         public CT_Compat()
@@ -6086,8 +6099,10 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
             if (node == null)
                 return null;
             CT_DocVar ctObj = new CT_DocVar();
+
             ctObj.name = XmlHelper.ReadString(node.Attributes["w:name"]);
             ctObj.val = XmlHelper.ReadString(node.Attributes["w:val"]);
+
             return ctObj;
         }
 
@@ -6095,11 +6110,11 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:name", this.name);
             XmlHelper.WriteAttribute(sw, "w:val", this.val);
-            sw.Write(">");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.Write('>');
+            sw.WriteEndW(nodeName);
         }
 
         [XmlAttribute(Form = System.Xml.Schema.XmlSchemaForm.Qualified)]
@@ -6166,8 +6181,8 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
-            sw.Write(">");
+            sw.WriteStartW(nodeName);
+            sw.Write('>');
             if (this.rsidRoot != null)
                 this.rsidRoot.Write(sw, "rsidRoot");
             if (this.rsid != null)
@@ -6177,7 +6192,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
                     x.Write(sw, "rsid");
                 }
             }
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.WriteEndW(nodeName);
         }
 
         [XmlElement(Order = 0)]
@@ -6301,7 +6316,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:bg1", this.bg1.ToString());
             XmlHelper.WriteAttribute(sw, "w:t1", this.t1.ToString());
             XmlHelper.WriteAttribute(sw, "w:bg2", this.bg2.ToString());
@@ -6713,8 +6728,8 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
-            sw.Write(">");
+            sw.WriteStartW(nodeName);
+            sw.Write('>');
             if (this.caption != null)
             {
                 foreach (CT_Caption x in this.caption)
@@ -6729,7 +6744,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
                     x.Write(sw, "autoCaptions");
                 }
             }
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.WriteEndW(nodeName);
         }
 
         [XmlElement("caption", Order = 0)]
@@ -6815,7 +6830,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:name", this.name);
             XmlHelper.WriteAttribute(sw, "w:pos", this.pos.ToString());
             XmlHelper.WriteAttribute(sw, "w:chapNum", this.chapNum.ToString());
@@ -6823,8 +6838,8 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
             XmlHelper.WriteAttribute(sw, "w:noLabel", this.noLabel.ToString());
             XmlHelper.WriteAttribute(sw, "w:numFmt", this.numFmt.ToString());
             XmlHelper.WriteAttribute(sw, "w:sep", this.sep.ToString());
-            sw.Write(">");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.Write('>');
+            sw.WriteEndW(nodeName);
         }
 
         [XmlAttribute(Form = System.Xml.Schema.XmlSchemaForm.Qualified)]
@@ -7028,11 +7043,11 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:name", this.name);
             XmlHelper.WriteAttribute(sw, "w:caption", this.caption);
-            sw.Write(">");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.Write('>');
+            sw.WriteEndW(nodeName);
         }
 
         [XmlAttribute(Form = System.Xml.Schema.XmlSchemaForm.Qualified)]
@@ -7094,13 +7109,13 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:actualPg", this.actualPg.ToString());
             XmlHelper.WriteAttribute(sw, "w:w", this.w);
             XmlHelper.WriteAttribute(sw, "w:h", this.h);
             XmlHelper.WriteAttribute(sw, "w:fontSz", this.fontSz);
-            sw.Write(">");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.Write('>');
+            sw.WriteEndW(nodeName);
         }
 
         [XmlAttribute(Form = System.Xml.Schema.XmlSchemaForm.Qualified)]
@@ -7184,12 +7199,12 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<w:{0}", nodeName));
+            sw.WriteStartW(nodeName);
             XmlHelper.WriteAttribute(sw, "w:namespaceuri", this.namespaceuri);
             XmlHelper.WriteAttribute(sw, "w:name", this.name);
             XmlHelper.WriteAttribute(sw, "w:url", this.url);
-            sw.Write(">");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.Write('>');
+            sw.WriteEndW(nodeName);
         }
 
         [XmlAttribute(Form = System.Xml.Schema.XmlSchemaForm.Qualified)]
@@ -7464,7 +7479,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         public CT_ShapeDefaults()
         {
-            this.itemsField = new System.Xml.XmlElement[0];
+            this.itemsField = [];
         }
 
         [XmlAnyElement(Namespace = "urn:schemas-microsoft-com:office:office", Order = 0)]

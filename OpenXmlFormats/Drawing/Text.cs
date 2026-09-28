@@ -1,10 +1,11 @@
-
+﻿
+using Cysharp.Text;
 using NPOI.OpenXml4Net.Util;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
-using System.Text;
+using System.Text; 
 using System.Xml;
 using System.Xml.Serialization;
 
@@ -170,8 +171,8 @@ namespace NPOI.OpenXmlFormats.Dml
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<a:{0}", nodeName));
-            sw.Write(">");
+            sw.WriteStart("a", nodeName);
+            sw.Write('>');
             if (this.defPPr != null)
                 this.defPPr.Write(sw, "defPPr");
             if (this.lvl1pPr != null)
@@ -194,8 +195,110 @@ namespace NPOI.OpenXmlFormats.Dml
                 this.lvl9pPr.Write(sw, "lvl9pPr");
             if (this.extLst != null)
                 this.extLst.Write(sw, "extLst");
-            sw.Write(string.Format("</a:{0}>", nodeName));
+            sw.WriteEndElement("a", nodeName);
         }
+
+        public bool IsSetLvl1pPr()
+        {
+            return this.lvl1pPrField != null;
+        }
+
+        public void UnsetLvl1pPr()
+        {
+            this.lvl1pPrField = null;
+        }
+
+        public bool IsSetLvl2pPr()
+        {
+            return this.lvl2pPrField != null;
+        }
+
+        public void UnsetLvl2pPr()
+        {
+            this.lvl2pPrField = null;
+        }
+
+        public bool IsSetLvl3pPr()
+        {
+            return this.lvl3pPrField != null;
+        }
+
+        public void UnsetLvl3pPr()
+        {
+            this.lvl3pPrField = null;
+        }
+
+        public bool IsSetLvl4pPr()
+        {
+            return this.lvl4pPrField != null;
+        }
+
+        public void UnsetLvl4pPr()
+        {
+            this.lvl4pPrField = null;
+        }
+
+        public bool IsSetLvl5pPr()
+        {
+            return this.lvl5pPrField != null;
+        }
+
+        public void UnsetLvl5pPr()
+        {
+            this.lvl5pPrField = null;
+        }
+
+        public bool IsSetLvl6pPr()
+        {
+            return this.lvl6pPrField != null;
+        }
+
+        public void UnsetLvl6pPr()
+        {
+            this.lvl6pPrField = null;
+        }
+
+        public bool IsSetLvl7pPr()
+        {
+            return this.lvl7pPrField != null;
+        }
+
+        public void UnsetLvl7pPr()
+        {
+            this.lvl7pPrField = null;
+        }
+
+        public bool IsSetLvl8pPr()
+        {
+            return this.lvl8pPrField != null;
+        }
+
+        public void UnsetLvl8pPr()
+        {
+            this.lvl8pPrField = null;
+        }
+
+        public bool IsSetLvl9pPr()
+        {
+            return this.lvl9pPrField != null;
+        }
+
+        public void UnsetLvl9pPr()
+        {
+            this.lvl9pPrField = null;
+        }
+
+        public bool IsSetDefPPr()
+        {
+            return this.defPPrField != null;
+        }
+
+        public void UnsetDefPPr()
+        {
+            this.defPPrField = null;
+        }
+
+        
 
         public CT_TextParagraphProperties defPPr {
             get {
@@ -337,13 +440,33 @@ namespace NPOI.OpenXmlFormats.Dml
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<a:{0}", nodeName));
+            sw.WriteStart("a", nodeName);
             XmlHelper.WriteAttribute(sw, "fontScale", this.fontScale);
             XmlHelper.WriteAttribute(sw, "lnSpcReduction", this.lnSpcReduction);
-            sw.Write(">");
-            sw.Write(string.Format("</a:{0}>", nodeName));
+            sw.Write('>');
+            sw.WriteEndElement("a", nodeName);
         }
-    
+
+        public bool IsSetFontScale()
+        {
+            return this.fontScaleField != 100000;
+        }
+
+        public void UnsetFontScale()
+        {
+            this.fontScaleField = 100000;
+        }
+
+        public bool IsSetLnSpcReduction()
+        {
+            return this.lnSpcReductionField != 0;
+        }
+
+        public void UnsetLnSpcReduction()
+        {
+            this.lnSpcReductionField = 0;
+        }
+
         [XmlAttribute]
         [DefaultValue(100000)]
         public int fontScale {
@@ -513,10 +636,10 @@ namespace NPOI.OpenXmlFormats.Dml
             ctObj.wrapFieldSpecified = node.Attributes["wrap"] != null;
             if (node.Attributes["wrap"] != null)
                 ctObj.wrapField = (ST_TextWrappingType)Enum.Parse(typeof(ST_TextWrappingType), node.Attributes["wrap"].Value);
-            ctObj.lIns = XmlHelper.ReadInt(node.Attributes["lIns"]);
-            ctObj.tIns = XmlHelper.ReadInt(node.Attributes["tIns"]);
-            ctObj.rIns = XmlHelper.ReadInt(node.Attributes["rIns"]);
-            ctObj.bIns = XmlHelper.ReadInt(node.Attributes["bIns"]);
+            ctObj.lIns = XmlHelper.ReadInt(node.Attributes["lIns"], 91440);
+            ctObj.tIns = XmlHelper.ReadInt(node.Attributes["tIns"], 45720);
+            ctObj.rIns = XmlHelper.ReadInt(node.Attributes["rIns"], 91440);
+            ctObj.bIns = XmlHelper.ReadInt(node.Attributes["bIns"], 45720);
             ctObj.numCol = XmlHelper.ReadInt(node.Attributes["numCol"]);
             ctObj.spcCol = XmlHelper.ReadInt(node.Attributes["spcCol"]);
             ctObj.rtlCol = XmlHelper.ReadBool(node.Attributes["rtlCol"]);
@@ -554,7 +677,7 @@ namespace NPOI.OpenXmlFormats.Dml
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<a:{0}", nodeName));
+            sw.WriteStart("a", nodeName);
             if(this.rotFieldSpecified)
                 XmlHelper.WriteAttribute(sw, "rot", this.rotField,true);
             if(spcFirstLastPara)
@@ -565,12 +688,12 @@ namespace NPOI.OpenXmlFormats.Dml
                 XmlHelper.WriteAttribute(sw, "horzOverflow", this.horzOverflowField.ToString());
             if(this.vertFieldSpecified)
                 XmlHelper.WriteAttribute(sw, "vert", this.vert.ToString());
-            if(this.wrapFieldSpecified && this.wrap!= ST_TextWrappingType.none)
+            if(this.wrapFieldSpecified && this.wrap == ST_TextWrappingType.none)
                 XmlHelper.WriteAttribute(sw, "wrap", this.wrap.ToString());
-            XmlHelper.WriteAttribute(sw, "lIns", this.lIns);
-            XmlHelper.WriteAttribute(sw, "tIns", this.tIns);
-            XmlHelper.WriteAttribute(sw, "rIns", this.rIns);
-            XmlHelper.WriteAttribute(sw, "bIns", this.bIns);
+            XmlHelper.WriteAttribute(sw, "lIns", this.lIns, 91440);
+            XmlHelper.WriteAttribute(sw, "tIns", this.tIns, 45720);
+            XmlHelper.WriteAttribute(sw, "rIns", this.rIns, 91440);
+            XmlHelper.WriteAttribute(sw, "bIns", this.bIns, 45720);
             XmlHelper.WriteAttribute(sw, "numCol", this.numCol);
             XmlHelper.WriteAttribute(sw, "spcCol", this.spcCol);
             XmlHelper.WriteAttribute(sw, "rtlCol", this.rtlCol);
@@ -583,7 +706,7 @@ namespace NPOI.OpenXmlFormats.Dml
                 XmlHelper.WriteAttribute(sw, "upright", this.upright);
             if (compatLnSpc)
                 XmlHelper.WriteAttribute(sw, "compatLnSpc", this.compatLnSpc);
-            sw.Write(">");
+            sw.Write('>');
             if (this.prstTxWarp != null)
                 this.prstTxWarp.Write(sw, "prstTxWarp");
             if (this.noAutofit != null)
@@ -600,7 +723,7 @@ namespace NPOI.OpenXmlFormats.Dml
                 this.flatTx.Write(sw, "flatTx");
             if (this.extLst != null)
                 this.extLst.Write(sw, "extLst");
-            sw.Write(string.Format("</a:{0}>", nodeName));
+            sw.WriteEndElement("a", nodeName);
         }
 
         public CT_PresetTextShape prstTxWarp
@@ -1376,6 +1499,16 @@ namespace NPOI.OpenXmlFormats.Dml
         {
             this.wrapFieldSpecified = false;
         }
+
+        public bool IsSetExtLst()
+        {
+            return this.extLstField != null;
+        }
+
+        public void UnsetExtLst()
+        {
+            this.extLstField = null;
+        }
     }
     
 
@@ -1410,12 +1543,20 @@ namespace NPOI.OpenXmlFormats.Dml
             return ctObj;
         }
 
-
+        public CT_TextBody()
+        {
+            pField = new List<CT_TextParagraph>();
+        }
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<a:{0}", nodeName));
-            sw.Write(">");
+            Write(sw, "a", nodeName);
+        }
+
+        internal void Write(StreamWriter sw, string ns, string nodeName)
+        {
+            sw.WriteStart(ns, nodeName);
+            sw.Write('>');
             if (this.bodyPr != null)
                 this.bodyPr.Write(sw, "bodyPr");
             if (this.lstStyle != null)
@@ -1424,16 +1565,19 @@ namespace NPOI.OpenXmlFormats.Dml
             {
                 x.Write(sw, "p");
             }
-            sw.Write(string.Format("</a:{0}>", nodeName));
+            sw.WriteEndElement(ns, nodeName);
         }
 
         public void SetPArray(CT_TextParagraph[] array)
         {
-            pField = new List<CT_TextParagraph>(array);
+            if (array == null)
+                pField.Clear();
+            else
+                pField = new List<CT_TextParagraph>(array);
         }
         public CT_TextParagraph AddNewP()
         {
-            if (this.pField == null)
+            if(this.pField == null)
                 pField = new List<CT_TextParagraph>();
             CT_TextParagraph tp = new CT_TextParagraph();
             pField.Add(tp);
@@ -1446,43 +1590,83 @@ namespace NPOI.OpenXmlFormats.Dml
         }
         public CT_TextListStyle AddNewLstStyle()
         {
-                this.lstStyleField=new CT_TextListStyle();
-            return this.lstStyleField;   
+            this.lstStyleField=new CT_TextListStyle();
+            return this.lstStyleField;
         }
-    
-        public CT_TextBodyProperties bodyPr {
-            get {
+
+        public CT_TextBodyProperties bodyPr
+        {
+            get
+            {
                 return this.bodyPrField;
             }
-            set {
+            set
+            {
                 this.bodyPrField = value;
             }
         }
-        
-    
-        public CT_TextListStyle lstStyle {
-            get {
+
+
+        public CT_TextListStyle lstStyle
+        {
+            get
+            {
                 return this.lstStyleField;
             }
-            set {
+            set
+            {
                 this.lstStyleField = value;
             }
         }
         public override string ToString()
         {
-            if (p == null||p.Count==0)
+            if(p == null||p.Count==0)
                 return string.Empty;
-            StringBuilder sb = new StringBuilder();
-            foreach (CT_TextParagraph tp in p)
+
+            using(var sb = ZString.CreateStringBuilder())
             {
-                foreach (CT_RegularTextRun tr in tp.r)
+                foreach(CT_TextParagraph tp in p)
                 {
-                    sb.Append(tr.t);
+                    foreach(CT_RegularTextRun tr in tp.r)
+                    {
+                        sb.Append(tr.t);
+                    }
                 }
+                return sb.ToString();
             }
-            return sb.ToString();
         }
-    
+
+        public bool IsSetLstStyle()
+        {
+            return this.lstStyleField != null;
+        }
+
+        public int SizeOfPArray()
+        {
+            return this.pField.Count;
+        }
+
+        public void RemoveP(int index)
+        {
+            if(index < 0 || index >= this.pField.Count)
+                throw new ArgumentOutOfRangeException();
+            this.pField.RemoveAt(index);
+        }
+
+        public CT_TextParagraph InsertNewP(int index)
+        {
+            CT_TextParagraph t = new CT_TextParagraph();
+            this.pField.Insert(index, t);
+            return t;
+        }
+
+        public CT_TextParagraph GetPArray(int index)
+        {
+            if(index < 0 || index >= this.pField.Count)
+                throw new ArgumentOutOfRangeException();
+            return this.pField[index];
+        }
+
         [XmlElement("p")]
         public List<CT_TextParagraph> p {
             get {

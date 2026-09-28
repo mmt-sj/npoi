@@ -37,17 +37,17 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<{0}", nodeName));
+            sw.WriteStart(nodeName);
             XmlHelper.WriteAttribute(sw, "count", this.count);
-            sw.Write(">");
+            sw.Write('>');
             if (this.xf != null)
             {
                 foreach (CT_Xf x in this.xf)
                 {
-                    x.Write(sw, "xf");
+                    x.Write(sw, "xf", true);
                 }
             }
-            sw.Write(string.Format("</{0}>", nodeName));
+            sw.WriteEndElement(nodeName);
         }
 
         public CT_CellStyleXfs()

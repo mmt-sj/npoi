@@ -20,6 +20,7 @@ namespace NPOI.HSSF.UserModel
     using System;
     using System.Collections;
     using System.Collections.Generic;
+    using System.Linq;
 
     using NPOI.HSSF.Record;
     using NPOI.SS.UserModel;
@@ -40,7 +41,8 @@ namespace NPOI.HSSF.UserModel
         public const int INITIAL_CAPACITY = 5;
 
         private int rowNum;
-        private SortedDictionary<int, ICell> cells = new SortedDictionary<int, ICell>();
+        private Dictionary<int, ICell> cells = new Dictionary<int, ICell>();
+        private List<ICell> _sortedCellCache;
          
         /**
          * reference to low level representation
@@ -167,7 +169,7 @@ namespace NPOI.HSSF.UserModel
                 throw new Exception("Negative cell indexes not allowed");
             }
             //if (column >= cells.Count || cell != cells[column])
-            if(!cells.ContainsKey(column)|| cell!=cells[column])
+            if(!cells.TryGetValue(column, out ICell value) || cell != value)
             {
                 throw new Exception("Specified cell is not from this row");
             }
@@ -176,7 +178,7 @@ namespace NPOI.HSSF.UserModel
                 ((HSSFCell)cell).NotifyArrayFormulaChanging();
             }
             cells.Remove(column);
-
+            _sortedCellCache = null;
 
             if (alsoRemoveRecords)
             {
@@ -290,7 +292,8 @@ namespace NPOI.HSSF.UserModel
             cells.Values.CopyTo(cellsToRemove, 0);
             foreach (ICell cell in cellsToRemove)
             {
-                RemoveCell(cell, true);
+                if(cell != null)
+                    RemoveCell(cell, true);
             }
         }
 
@@ -399,12 +402,9 @@ namespace NPOI.HSSF.UserModel
             //    cells = new HSSFCell[newSize];
             //    Array.Copy(oldCells, 0, cells, 0, oldCells.Length);
             //}
-            if (cells.ContainsKey(column))
-            {
-                cells.Remove(column);
-            }
-            cells.Add(column, cell);
-            
+            cells[column] = cell;
+            _sortedCellCache = null;
+
             // fix up firstCol and lastCol indexes
             if (row.IsEmpty|| column < row.FirstCol)
             {
@@ -427,10 +427,10 @@ namespace NPOI.HSSF.UserModel
         /// <returns>Cell representing that column or null if Undefined.</returns>
         private ICell RetrieveCell(int cellnum)
         {
-            if (!cells.ContainsKey(cellnum))
+            if (!cells.TryGetValue(cellnum, out ICell cell))
                 return null;
             //if (cellnum < 0 || cellnum >= cells.Count) return null;
-            return cells[cellnum];
+            return cell;
         }
 
         /// <summary>
@@ -467,7 +467,7 @@ namespace NPOI.HSSF.UserModel
                 case MissingCellPolicy.CREATE_NULL_AS_BLANK:
                     return (cell == null) ? CreateCell(cellnum, CellType.Blank) : cell;
                 default:
-                    throw new ArgumentException("Illegal policy " + policy + " (" + policy + ")");
+                    throw new ArgumentException("Illegal policy " + policy);
             }
         }
 
@@ -631,6 +631,7 @@ namespace NPOI.HSSF.UserModel
                 if (value == -1)
                 {
                     row.Height = unchecked(((short)(0xFF | 0x8000)));
+                    row.BadFontHeight = (false);
                 }
                 else
                 {
@@ -681,7 +682,7 @@ namespace NPOI.HSSF.UserModel
         public List<ICell> Cells
         {
             get {
-                return new List<ICell>(this.cells.Values);
+                return new List<ICell>(GetSortedCells());
             }
         }
 
@@ -721,7 +722,7 @@ namespace NPOI.HSSF.UserModel
         /// </remarks>
         public IEnumerator<ICell> GetEnumerator()
         {
-            return this.cells.Values.GetEnumerator();
+            return GetSortedCells().GetEnumerator();
         }
  
         /// <summary>
@@ -739,7 +740,7 @@ namespace NPOI.HSSF.UserModel
         /// Greater than zero
         /// This instance is greater than <paramref name="other"/>.
         /// </returns>
-        /// <exception cref="T:System.ArgumentException">
+        /// <exception cref="System.ArgumentException">
         /// 	<paramref name="other"/> is not the same type as this instance.
         /// </exception>
         public int CompareTo(HSSFRow other)
@@ -753,22 +754,21 @@ namespace NPOI.HSSF.UserModel
         }
 
         /// <summary>
-        /// Determines whether the specified <see cref="T:System.Object"/> is equal to the current <see cref="T:System.Object"/>.
+        /// Determines whether the specified <see cref="System.Object"/> is equal to the current <see cref="System.Object"/>.
         /// </summary>
-        /// <param name="obj">The <see cref="T:System.Object"/> to compare with the current <see cref="T:System.Object"/>.</param>
+        /// <param name="obj">The <see cref="System.Object"/> to compare with the current <see cref="System.Object"/>.</param>
         /// <returns>
-        /// true if the specified <see cref="T:System.Object"/> is equal to the current <see cref="T:System.Object"/>; otherwise, false.
+        /// true if the specified <see cref="System.Object"/> is equal to the current <see cref="System.Object"/>; otherwise, false.
         /// </returns>
-        /// <exception cref="T:System.NullReferenceException">
+        /// <exception cref="System.NullReferenceException">
         /// The <paramref name="obj"/> parameter is null.
         /// </exception>
         public override bool Equals(Object obj)
         {
-            if (!(obj is HSSFRow))
+            if (obj is not HSSFRow other)
             {
                 return false;
             }
-            HSSFRow other = (HSSFRow)obj;
 
             return (this.RowNum == other.RowNum) &&
                    (this.Sheet == other.Sheet);
@@ -790,6 +790,15 @@ namespace NPOI.HSSF.UserModel
         public bool HasCustomHeight()
         {
             throw new NotImplementedException();
+        }
+
+        private List<ICell> GetSortedCells()
+        {
+            if (_sortedCellCache == null)
+            {
+                _sortedCellCache = cells.OrderBy(kv => kv.Key).Select(kv => kv.Value).ToList();
+            }
+            return _sortedCellCache;
         }
     }
 }

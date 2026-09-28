@@ -25,7 +25,8 @@ using System;
 using NPOI.OpenXmlFormats.Spreadsheet;
 using System.Xml;
 using NPOI.OpenXml4Net.OPC;
-using System.Text;
+using System.Text; 
+using Cysharp.Text;
 using NPOI.SS.Util;
 using NPOI.SS.Formula;
 using NPOI.XSSF.UserModel.Helpers;
@@ -34,7 +35,9 @@ using NPOI.OpenXmlFormats;
 using System.Collections;
 using NPOI.OpenXml4Net.Exceptions;
 using NPOI.SS;
-using System.Globalization;
+using System.Linq;
+using NPOI.POIFS.FileSystem;
+using System.Data;
 
 namespace NPOI.XSSF.UserModel
 {
@@ -45,7 +48,7 @@ namespace NPOI.XSSF.UserModel
      */
     public class XSSFWorkbook : POIXMLDocument, IWorkbook
     {
-        private static Regex COMMA_PATTERN = new Regex(",", RegexOptions.Compiled);
+        private static readonly Regex COMMA_PATTERN = new Regex(",", RegexOptions.Compiled);
 
         /**
          * Width of one character of the default font in pixels. Same for Calibry and Arial.
@@ -56,7 +59,7 @@ namespace NPOI.XSSF.UserModel
          * Excel silently tRuncates long sheet names to 31 chars.
          * This constant is used to ensure uniqueness in the first 31 chars
          */
-        private static int Max_SENSITIVE_SHEET_NAME_LEN = 31;
+        private static readonly int Max_SENSITIVE_SHEET_NAME_LEN = 31;
         /** Extended windows meta file */
         public static int PICTURE_TYPE_EMF = 2;
 
@@ -117,7 +120,7 @@ namespace NPOI.XSSF.UserModel
          * The locator of user-defined functions.
          * By default includes functions from the Excel Analysis Toolpack
          */
-        private IndexedUDFFinder _udfFinder = new IndexedUDFFinder(UDFFinder.GetDefault());
+        private readonly IndexedUDFFinder _udfFinder = new IndexedUDFFinder(UDFFinder.GetDefault());
 
         /**
          * TODO
@@ -154,7 +157,7 @@ namespace NPOI.XSSF.UserModel
          */
         private List<XSSFPictureData> pictures;
 
-        private static POILogger logger = POILogFactory.GetLogger(typeof(XSSFWorkbook));
+        private static readonly POILogger logger = POILogFactory.GetLogger(typeof(XSSFWorkbook));
 
         /**
          * cached instance of XSSFCreationHelper for this workbook
@@ -208,12 +211,11 @@ namespace NPOI.XSSF.UserModel
             Load(XSSFFactory.GetInstance());
 
             // some broken Workbooks miss this...
-            if (!workbook.IsSetBookViews())
-            {
-                CT_BookViews bvs = workbook.AddNewBookViews();
-                CT_BookView bv = bvs.AddNewWorkbookView();
-                bv.activeTab = (0);
-            }
+            SetBookViewsIfMissing();
+        }
+        public XSSFWorkbook(PackagePart part): this(part.GetInputStream(), true)
+        {
+            
         }
         /**
          * Constructs a XSSFWorkbook object, by buffering the whole stream into memory
@@ -229,21 +231,9 @@ namespace NPOI.XSSF.UserModel
          *       pkg.close(); // gracefully closes the underlying zip file
          *   </code></pre>     
          */
-        public XSSFWorkbook(Stream is1)
-            : base(PackageHelper.Open(is1))
+        public XSSFWorkbook(Stream fileStream, bool readOnly = false)
+            : this(PackageHelper.Open(fileStream, readOnly))
         {
-            BeforeDocumentRead();
-
-            //build a tree of POIXMLDocumentParts, this workbook being the root
-            Load(XSSFFactory.GetInstance());
-
-            // some broken Workbooks miss this...
-            if (!workbook.IsSetBookViews())
-            {
-                CT_BookViews bvs = workbook.AddNewBookViews();
-                CT_BookView bv = bvs.AddNewWorkbookView();
-                bv.activeTab = (0);
-            }
         }
 
         /**
@@ -258,10 +248,10 @@ namespace NPOI.XSSF.UserModel
          *  
          * @param file   the file to open
          */
-        public XSSFWorkbook(FileInfo file)
-            : this(OPCPackage.Open(file))
+        public XSSFWorkbook(FileInfo file, bool readOnly = false)
+            : this(OPCPackage.Open(file, readOnly? PackageAccess.READ: PackageAccess.READ_WRITE))
         {
-     
+
         }
 
         /**
@@ -300,8 +290,8 @@ namespace NPOI.XSSF.UserModel
          * 
          * @param      path   the file name.
          */
-        public XSSFWorkbook(String path)
-            : this(OpenPackage(path))
+        public XSSFWorkbook(String path, bool readOnly = false)
+            : this(OpenPackage(path, readOnly))
         {
 
         }
@@ -334,18 +324,18 @@ namespace NPOI.XSSF.UserModel
                 foreach (RelationPart rp in RelationParts)
                 {
                     POIXMLDocumentPart p = rp.DocumentPart;
-                    if (p is SharedStringsTable) sharedStringSource = (SharedStringsTable)p;
-                    else if (p is StylesTable) stylesSource = (StylesTable)p;
-                    else if (p is ThemesTable) theme = (ThemesTable)p;
-                    else if (p is CalculationChain) calcChain = (CalculationChain)p;
-                    else if (p is MapInfo) mapInfo = (MapInfo)p;
-                    else if (p is XSSFSheet)
+                    if (p is SharedStringsTable table) sharedStringSource = table;
+                    else if (p is StylesTable stylesTable) stylesSource = stylesTable;
+                    else if (p is ThemesTable themesTable) theme = themesTable;
+                    else if (p is CalculationChain chain) calcChain = chain;
+                    else if (p is MapInfo info) mapInfo = info;
+                    else if (p is XSSFSheet sheet)
                     {
-                        shIdMap[rp.Relationship.Id] = (XSSFSheet)p;
+                        shIdMap[rp.Relationship.Id] = sheet;
                     }
-                    else if (p is ExternalLinksTable)
+                    else if (p is ExternalLinksTable linksTable)
                     {
-                        elIdMap[rp.Relationship.Id] = (ExternalLinksTable)p;
+                        elIdMap[rp.Relationship.Id] = linksTable;
                     }
                 }
 
@@ -364,7 +354,7 @@ namespace NPOI.XSSF.UserModel
                     }
                 }
                 stylesSource.SetWorkbook(this);
-                stylesSource.SetTheme(theme);
+                stylesSource.Theme = theme;
 
                 if (sharedStringSource == null)
                 {
@@ -395,8 +385,8 @@ namespace NPOI.XSSF.UserModel
                     foreach (CT_ExternalReference er in this.workbook.externalReferences.externalReference)
                     {
                         ExternalLinksTable el = null;
-                        if (elIdMap.ContainsKey(er.id))
-                            el = elIdMap[(er.id)];
+                        if (elIdMap.TryGetValue(er.id, out ExternalLinksTable value))
+                            el = value;
                         if (el == null)
                         {
                             logger.Log(POILogger.WARN, "ExternalLinksTable with r:id " + er.id + " was defined, but didn't exist in package, skipping");
@@ -421,8 +411,8 @@ namespace NPOI.XSSF.UserModel
         private void ParseSheet(Dictionary<String, XSSFSheet> shIdMap, CT_Sheet ctSheet)
         {
             XSSFSheet sh = null;
-            if (shIdMap.ContainsKey(ctSheet.id))
-                sh = shIdMap[ctSheet.id];
+            if (shIdMap.TryGetValue(ctSheet.id, out XSSFSheet value))
+                sh = value;
             if (sh == null)
             {
                 logger.Log(POILogger.WARN, "Sheet with name " + ctSheet.name + " and r:id " + ctSheet.id + " was defined, but didn't exist in package, skipping");
@@ -444,9 +434,7 @@ namespace NPOI.XSSF.UserModel
             CT_WorkbookPr workbookPr = workbook.AddNewWorkbookPr();
             workbookPr.date1904 = (false);
 
-            CT_BookViews bvs = workbook.AddNewBookViews();
-            CT_BookView bv = bvs.AddNewWorkbookView();
-            bv.activeTab = 0;
+            SetBookViewsIfMissing();
             workbook.AddNewSheets();
 
             ExtendedProperties expProps = GetProperties().ExtendedProperties;
@@ -474,6 +462,15 @@ namespace NPOI.XSSF.UserModel
             pivotTables = new List<XSSFPivotTable>();
         }
 
+        private void SetBookViewsIfMissing()
+        {
+            if(!workbook.IsSetBookViews())
+            {
+                CT_BookViews bvs = workbook.AddNewBookViews();
+                CT_BookView bv = bvs.AddNewWorkbookView();
+                bv.activeTab = 0;
+            }
+        }
         /**
          * Create a new SpreadsheetML namespace and Setup the default minimal content
          */
@@ -602,16 +599,16 @@ namespace NPOI.XSSF.UserModel
             XSSFSheet clonedSheet = CreateSheet(newName) as XSSFSheet;
 
             // copy sheet's relations
-            List<RelationPart> rels = srcSheet.RelationParts;
+            IList<RelationPart> rels = srcSheet.RelationParts;
             // if the sheet being cloned has a drawing then rememebr it and re-create it too
             XSSFDrawing dg = null;
             foreach (RelationPart rp in rels)
             {
                 POIXMLDocumentPart r = rp.DocumentPart;
                 // do not copy the drawing relationship, it will be re-created
-                if (r is XSSFDrawing)
+                if (r is XSSFDrawing drawing)
                 {
-                    dg = (XSSFDrawing)r;
+                    dg = drawing;
                     continue;
                 }
 
@@ -625,7 +622,7 @@ namespace NPOI.XSSF.UserModel
                     if (pr.TargetMode == TargetMode.External)
                     {
                         clonedSheet.GetPackagePart().AddExternalRelationship
-                            (pr.TargetUri.OriginalString, pr.RelationshipType, null);
+                            (pr.TargetUri.OriginalString, pr.RelationshipType, pr.Id);
                     }
                 }
             }
@@ -660,6 +657,12 @@ namespace NPOI.XSSF.UserModel
                 ct.UnsetPageSetup();
             }
 
+            if (srcSheet.RepeatingRows != null)
+                clonedSheet.RepeatingRows = srcSheet.RepeatingRows;
+
+            if (srcSheet.RepeatingColumns != null)
+                clonedSheet.RepeatingColumns = srcSheet.RepeatingColumns;
+
             clonedSheet.IsSelected = (false);
 
             // clone the sheet drawing alongs with its relationships
@@ -678,7 +681,7 @@ namespace NPOI.XSSF.UserModel
                 clonedDg = clonedSheet.CreateDrawingPatriarch() as XSSFDrawing;
 
                 // Clone drawing relations
-                List<RelationPart> srcRels = (srcSheet.CreateDrawingPatriarch() as XSSFDrawing).RelationParts;
+                IList<RelationPart> srcRels = (srcSheet.CreateDrawingPatriarch() as XSSFDrawing).RelationParts;
                 foreach (RelationPart rp in srcRels)
                 {
                     AddRelation(rp, clonedDg);
@@ -721,7 +724,7 @@ namespace NPOI.XSSF.UserModel
             int uniqueIndex = 2;
             String baseName = srcName;
             int bracketPos = srcName.LastIndexOf('(');
-            if (bracketPos > 0 && srcName.EndsWith(")"))
+            if (bracketPos > 0 && srcName.EndsWith(')'))
             {
                 String suffix = srcName.Substring(bracketPos + 1, srcName.Length - ")".Length - bracketPos - 1);
                 try
@@ -795,10 +798,14 @@ namespace NPOI.XSSF.UserModel
 
         private void PutValuesMapping(string key, XSSFName name)
         {
-            if (namedRangesByName.ContainsKey(key))
-                namedRangesByName[key].Add(name);
+            if(namedRangesByName.TryGetValue(key, out List<XSSFName> value))
+            {
+                value.Add(name);
+            }
             else
-                namedRangesByName.Add(key, new List<XSSFName>() { name });
+            {
+                namedRangesByName.Add(key, [name]);
+            }
         }
 
         private XSSFName CreateAndStoreName(CT_DefinedName ctName)
@@ -928,7 +935,7 @@ namespace NPOI.XSSF.UserModel
         private void ValidateSheetName(String sheetName)
         {
             if (ContainsSheet(sheetName, sheets.Count))
-                throw new ArgumentException(string.Format("The workbook already contains a sheet named '{0}'",sheetName));
+                throw new ArgumentException(string.Format("The workbook already contains a sheet named '{0}'", sheetName));
         }
         protected XSSFDialogsheet CreateDialogsheet(String sheetname, CT_Dialogsheet dialogsheet)
         {
@@ -945,14 +952,6 @@ namespace NPOI.XSSF.UserModel
             return sheet;
         }
 
-        /**
-         * Finds a font that matches the one with the supplied attributes
-         */
-        [Obsolete("deprecated POI 3.15. Use {@link #findFont(boolean, short, short, String, boolean, boolean, short, byte)} instead.")]
-        public IFont FindFont(short boldWeight, short color, short fontHeight, String name, bool italic, bool strikeout, FontSuperScript typeOffset, FontUnderlineType underline)
-        {
-            return stylesSource.FindFont(boldWeight, color, fontHeight, name, italic, strikeout, typeOffset, underline);
-        }
         /**
          * Finds a font that matches the one with the supplied attributes
          */
@@ -1117,7 +1116,7 @@ namespace NPOI.XSSF.UserModel
         {
             get
             {
-                return (short)stylesSource.GetFonts().Count;
+                return (short)stylesSource.Fonts.Count;
             }
         }
 
@@ -1178,6 +1177,8 @@ namespace NPOI.XSSF.UserModel
             }
             return null;
         }
+
+        public ISheet this[string name] => GetSheet(name);
 
         /**
          * Get the XSSFSheet object at the given index.
@@ -1271,7 +1272,7 @@ namespace NPOI.XSSF.UserModel
         public void RemoveName(String name)
         {
             List<XSSFName> names = namedRangesByName[name.ToLower()];
-            if (names.Count==0)
+            if (names.Count == 0)
             {
                 throw new ArgumentException("Named range was not found: " + name);
             }
@@ -1280,9 +1281,8 @@ namespace NPOI.XSSF.UserModel
 
         private bool RemoveMapping(string key, XSSFName item)
         {
-            if(namedRangesByName.ContainsKey(key))
+            if (namedRangesByName.TryGetValue(key, out List<XSSFName> values))
             {
-                var values = namedRangesByName[key];
                 return values.Remove(item);
             }
             return false;
@@ -1385,6 +1385,11 @@ namespace NPOI.XSSF.UserModel
          */
         private void OnSheetDelete(int index)
         {
+            // remove all sheet relations
+            XSSFSheet sheet = GetSheetAt(index) as XSSFSheet;
+
+            sheet.OnSheetDelete();
+
             //delete the CT_Sheet reference from workbook.xml
             workbook.sheets.RemoveSheet(index);
 
@@ -1551,7 +1556,7 @@ namespace NPOI.XSSF.UserModel
                 }
             }
 
-            StringBuilder rng = new StringBuilder();
+            using var rng = ZString.CreateStringBuilder();
             rng.Append(c);
             if (rng.Length > 0 && r.Length > 0) rng.Append(',');
             rng.Append(r);
@@ -1571,7 +1576,7 @@ namespace NPOI.XSSF.UserModel
         {
             if (!namedRangesByName.ContainsKey(builtInCode.ToLower()))
                 return null;
-            
+
             foreach (XSSFName name in namedRangesByName[builtInCode.ToLower()])
             {
                 if (name.SheetIndex == sheetNumber)
@@ -1644,7 +1649,7 @@ namespace NPOI.XSSF.UserModel
 
             // Check it isn't already taken
             if (ContainsSheet(sheetname, sheetIndex))
-                throw new ArgumentException(string.Format("The workbook already contains a sheet named '{0}'",sheetname));
+                throw new ArgumentException(string.Format("The workbook already contains a sheet named '{0}'", sheetname));
 
             // Update references to the name
             XSSFFormulaUtils utils = new XSSFFormulaUtils(this);
@@ -1815,16 +1820,18 @@ namespace NPOI.XSSF.UserModel
         /// <summary>
         /// Write the document to the specified stream, and optionally leave the stream open without closing it.
         /// </summary>
-        public void Write(Stream stream, bool leaveOpen)
+        /// <param name="stream">the stream you wish to write the xlsx to</param>
+        /// <param name="leaveOpen">leave stream open or not</param>
+        public void Write(Stream stream, bool leaveOpen = false)
         {
             bool? originalValue = null;
-            if (Package is ZipPackage)
+            if (Package is ZipPackage package)
             {
                 //By default ZipPackage closes the stream if it wasn't constructed from a stream.
                 originalValue = ((ZipPackage)Package).IsExternalStream;
                 ((ZipPackage)Package).IsExternalStream = leaveOpen;
             }
-            Write(stream);
+            base.Write(stream);
             if (originalValue.HasValue && Package is ZipPackage)
             {
                 ((ZipPackage)Package).IsExternalStream = originalValue.Value;
@@ -1857,7 +1864,7 @@ namespace NPOI.XSSF.UserModel
         public ThemesTable GetTheme()
         {
             if (stylesSource == null) return null;
-            return stylesSource.GetTheme();
+            return stylesSource.Theme;
         }
 
         /**
@@ -1984,6 +1991,26 @@ namespace NPOI.XSSF.UserModel
             return ctSheet.state == ST_SheetState.veryHidden;
         }
 
+        public SheetVisibility GetSheetVisibility(int sheetIx)
+        {
+            ValidateSheetIndex(sheetIx);
+            CT_Sheet ctSheet = sheets[sheetIx].sheet;
+            ST_SheetState state = ctSheet.state;
+            if(state == ST_SheetState.visible)
+            {
+                return SheetVisibility.Visible;
+            }
+            if(state == ST_SheetState.hidden)
+            {
+                return SheetVisibility.Hidden;
+            }
+            if(state == ST_SheetState.veryHidden)
+            {
+                return SheetVisibility.VeryHidden;
+            }
+            throw new ArgumentException("This should never happen");
+        }
+
         /**
          * Sets the visible state of this sheet.
          * <p>
@@ -2000,7 +2027,7 @@ namespace NPOI.XSSF.UserModel
          */
         public void SetSheetHidden(int sheetIx, bool hidden)
         {
-            SetSheetHidden(sheetIx, hidden ? SheetState.Hidden : SheetState.Visible);
+            SetSheetHidden(sheetIx, hidden ? SheetVisibility.Hidden : SheetVisibility.Visible);
         }
 
         /**
@@ -2018,12 +2045,10 @@ namespace NPOI.XSSF.UserModel
          *        <code>Workbook.SHEET_STATE_VERY_HIDDEN</code>.
          * @throws ArgumentException if the supplied sheet index or state is invalid
          */
-        public void SetSheetHidden(int sheetIx, SheetState state)
+        [Obsolete]
+        public void SetSheetHidden(int sheetIx, SheetVisibility state)
         {
-            ValidateSheetIndex(sheetIx);
-            WorkbookUtil.ValidateSheetState(state);
-            CT_Sheet ctSheet = sheets[sheetIx].sheet;
-            ctSheet.state = (ST_SheetState)state;
+            SetSheetVisibility(sheetIx, state);
         }
 
         /// <summary>
@@ -2031,10 +2056,32 @@ namespace NPOI.XSSF.UserModel
         /// </summary>
         /// <param name="sheetIx">The sheet number</param>
         /// <param name="hidden">0 for not hidden, 1 for hidden, 2 for very hidden</param>
-        public void SetSheetHidden(int sheetIx, int hidden)
+        [Obsolete]
+        public void SetSheetHidden(int sheetIx, int state)
+        {
+            WorkbookUtil.ValidateSheetState((SheetVisibility)state);
+            SetSheetVisibility(sheetIx, (SheetVisibility) state);
+        }
+
+        public void SetSheetVisibility(int sheetIx, SheetVisibility visibility)
         {
             ValidateSheetIndex(sheetIx);
-            this.SetSheetHidden(sheetIx, (SheetState)hidden);
+
+            CT_Sheet ctSheet = sheets[sheetIx].sheet;
+            switch(visibility)
+            {
+                case SheetVisibility.Visible:
+                    ctSheet.state = (ST_SheetState.visible);
+                    break;
+                case SheetVisibility.Hidden:
+                    ctSheet.state = (ST_SheetState.hidden);
+                    break;
+                case SheetVisibility.VeryHidden:
+                    ctSheet.state = (ST_SheetState.veryHidden);
+                    break;
+                default:
+                    throw new ArgumentException("This should never happen");
+            }
         }
 
         /**
@@ -2217,7 +2264,7 @@ namespace NPOI.XSSF.UserModel
             foreach (var xssfPivotTable in pivotTables)
             {
                 var sheet = xssfPivotTable.GetParent();
-                if ( sheet is XSSFSheet )
+                if (sheet is XSSFSheet)
                 {
                     sheet.RemoveRelation(xssfPivotTable);
                 }
@@ -2225,9 +2272,8 @@ namespace NPOI.XSSF.UserModel
 
             foreach (var poixmlDocumentPart in GetRelations())
             {
-                if (poixmlDocumentPart is XSSFPivotCacheDefinition)
+                if (poixmlDocumentPart is XSSFPivotCacheDefinition pivotCacheDefinition)
                 {
-                    var pivotCacheDefinition = (XSSFPivotCacheDefinition)poixmlDocumentPart; 
                     RemoveRelation(pivotCacheDefinition);
                 }
             }
@@ -2259,7 +2305,7 @@ namespace NPOI.XSSF.UserModel
          * @return wrapped instance of UDFFinder that allows seeking functions both by index and name
          */
         /*package*/
-        internal UDFFinder GetUDFFinder()
+        internal IndexedUDFFinder GetUDFFinder()
         {
             return _udfFinder;
         }
@@ -2404,7 +2450,7 @@ namespace NPOI.XSSF.UserModel
         public bool CellFormulaValidation
         {
             get { return this.cellFormulaValidation; }
-            set { this.cellFormulaValidation = false; }
+            set { this.cellFormulaValidation = value; }
         }
 
         #region IWorkbook Members
@@ -2412,7 +2458,33 @@ namespace NPOI.XSSF.UserModel
 
         public int AddPicture(byte[] pictureData, PictureType format)
         {
-            int imageNumber = GetAllPictures().Count + 1;
+            int imageNumber = 1;
+            List<XSSFPictureData> allPics = (List<XSSFPictureData>)GetAllPictures();
+
+            if (allPics.Count > 0)
+            {
+                List<int> sortedIndexs = new List<int> { 0 };
+
+                sortedIndexs.AddRange
+                    (
+                        allPics
+                            .Select(pic => XSSFPictureData.RELATIONS[(int)pic.PictureType].GetFileNameIndex(pic))
+                            .OrderBy(i => i)
+                            .ToList()
+                    );
+
+                int previous = sortedIndexs[0];
+                for (int index = 1; index < sortedIndexs.Count; index++)
+                {
+                    if (sortedIndexs[index] > previous + 1)
+                        break;
+
+                    previous = sortedIndexs[index];
+                }
+
+                imageNumber = previous + 1;
+            }
+            
             XSSFPictureData img = (XSSFPictureData)CreateRelationship(XSSFPictureData.RELATIONS[(int)format], XSSFFactory.GetInstance(), imageNumber, true).DocumentPart;
             try
             {
@@ -2425,8 +2497,9 @@ namespace NPOI.XSSF.UserModel
                 throw new POIXMLException(e);
             }
             pictures.Add(img);
-            return imageNumber - 1;
 
+            // returns image Index
+            return allPics.Count - 1;
         }
 
         public XSSFWorkbookType WorkbookType
@@ -2511,6 +2584,54 @@ namespace NPOI.XSSF.UserModel
             }
         }
 
+        /// <summary>
+        /// Adds an OLE package manager object with the given content to the sheet
+        /// </summary>
+        /// <param name="oleData">the payload</param>
+        /// <param name="label">the label of the payload</param>
+        /// <param name="fileName">the original filename</param>
+        /// <param name="command">the command to open the payload</param>
+        /// <return>the index of the added ole object, i.e. the storage id</return>
+        /// <exception cref="IOException">if the object can't be embedded</exception>
+        public int AddOlePackage(byte[] oleData, String label, String fileName, String command)
+        {
+            // find an unused part name
+            OPCPackage opc = Package;
+            PackagePartName pnOLE;
+            int oleId=0;
+            do
+            {
+                try
+                {
+                    pnOLE = PackagingUriHelper.CreatePartName("/xl/embeddings/oleObject"+(++oleId)+".bin");
+                }
+                catch(InvalidFormatException e)
+                {
+                    throw new IOException("ole object name not recognized", e);
+                }
+            } while(opc.ContainPart(pnOLE));
+
+            PackagePart pp = opc.CreatePart( pnOLE, "application/vnd.openxmlformats-officedocument.oleObject" );
+
+            Ole10Native ole10 = new Ole10Native(label, fileName, command, oleData);
+
+            ByteArrayOutputStream bos = new ByteArrayOutputStream(oleData.Length+500);
+            ole10.WriteOut(bos);
+
+            POIFSFileSystem poifs = new POIFSFileSystem();
+            DirectoryNode root = poifs.Root;
+            root.CreateDocument(Ole10Native.OLE10_NATIVE, new ByteArrayInputStream(bos.ToByteArray()));
+            root.StorageClsid = (HPSF.ClassID.OLE10_PACKAGE);
+
+            // TODO: generate CombObj stream
+
+            Stream os = pp.GetOutputStream();
+            poifs.WriteFileSystem(os);
+            os.Close();
+            poifs.Close();
+
+            return oleId;
+        }
         #endregion
 
         #region IList<XSSFSheet> Members
@@ -2585,8 +2706,16 @@ namespace NPOI.XSSF.UserModel
 
         public bool Remove(ISheet item)
         {
+            string sheetName = item.SheetName;
+            int idx = sheets.FindIndex(_ => _.SheetName.Equals(sheetName, StringComparison.CurrentCultureIgnoreCase));
 
-            return this.sheets.Remove((XSSFSheet)item);
+            if (idx != -1)
+            {
+                RemoveSheetAt(idx);
+                return true;
+            }
+
+            return false;
         }
 
         #endregion
@@ -2594,6 +2723,17 @@ namespace NPOI.XSSF.UserModel
         public void Dispose()
         {
             this.Close();
+        }
+
+        public DataSet ToDataSet(bool firstRowAsHeader = false, bool showCalculatedValue = false)
+        {
+            return WorkbookUtil.ToDataSet(this, firstRowAsHeader, showCalculatedValue);
+        }
+
+        public bool ForceFormulaRecalculation
+        {
+            get => GetForceFormulaRecalculation();
+            set => SetForceFormulaRecalculation(value);
         }
     }
 }

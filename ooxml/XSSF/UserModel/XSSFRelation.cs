@@ -30,7 +30,7 @@ namespace NPOI.XSSF.UserModel
     public class XSSFRelation : POIXMLRelation
     {
 
-        private static POILogger log = POILogFactory.GetLogger(typeof(XSSFRelation));
+        private static readonly POILogger log = POILogFactory.GetLogger(typeof(XSSFRelation));
 
         /**
          * A map to lookup POIXMLRelation by its relation type
@@ -262,6 +262,28 @@ namespace NPOI.XSSF.UserModel
                 "/xl/activeX/activeX#.bin",
                 null
         );
+
+        public static XSSFRelation MACRO_SHEET_BIN = new XSSFRelation(
+            null,//TODO: figure out what this should be?
+            "http://schemas.microsoft.com/office/2006/relationships/xlMacrosheet",
+            "/xl/macroSheets/sheet#.bin",
+            null
+        );
+
+        public static XSSFRelation INTL_MACRO_SHEET_BIN = new XSSFRelation(
+            null,//TODO: figure out what this should be?
+            "http://schemas.microsoft.com/office/2006/relationships/xlIntlMacrosheet",
+            "/xl/macroSheets/sheet#.bin",
+            null
+        );
+
+        public static XSSFRelation DIALOG_SHEET_BIN = new XSSFRelation(
+            null,//TODO: figure out what this should be?
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/dialogsheet",
+            "/xl/dialogSheets/sheet#.bin",
+            null
+        );
+
         public static XSSFRelation THEME = new XSSFRelation(
                 "application/vnd.openxmlformats-officedocument.theme+xml",
                 "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
@@ -315,6 +337,13 @@ namespace NPOI.XSSF.UserModel
             null
         );
 
+        public static XSSFRelation CUSTOM_PROPERTIES = new XSSFRelation(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.customProperty",
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/customProperty",
+            "/xl/customProperty#.bin",
+            null
+    );
+
         public static String NS_SPREADSHEETML = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
         public static String NS_DRAWINGML = "http://schemas.openxmlformats.org/drawingml/2006/main";
         public static String NS_CHART = "http://schemas.openxmlformats.org/drawingml/2006/chart";
@@ -322,12 +351,7 @@ namespace NPOI.XSSF.UserModel
         private XSSFRelation(String type, String rel, String defaultName, Type cls) :
             base(type, rel, defaultName, cls)
         {
-            if (_table.ContainsKey(rel))
-                _table[rel] = this; 
-            else
-            {
-                _table.Add(rel, this);
-            }
+            _table[rel] = this; 
         }
 
         /**
@@ -338,7 +362,7 @@ namespace NPOI.XSSF.UserModel
         public Stream GetContents(PackagePart corePart)
         {
             PackageRelationshipCollection prc =
-                corePart.GetRelationshipsByType(_relation);
+                corePart.GetRelationshipsByType(Relation);
             IEnumerator<PackageRelationship> it = prc.GetEnumerator();
             if (it.MoveNext())
             {
@@ -347,7 +371,7 @@ namespace NPOI.XSSF.UserModel
                 PackagePart part = corePart.Package.GetPart(relName);
                 return part.GetInputStream();
             }
-            log.Log(POILogger.WARN, "No part " + _defaultName + " found");
+            log.Log(POILogger.WARN, "No part " + DefaultFileName + " found");
             return null;
         }
 
@@ -361,8 +385,8 @@ namespace NPOI.XSSF.UserModel
          */
         public static XSSFRelation GetInstance(String rel)
         {
-            if (_table.ContainsKey(rel))
-                return _table[rel];
+            if (_table.TryGetValue(rel, out XSSFRelation instance))
+                return instance;
             else
                 return null;
         }
@@ -374,10 +398,7 @@ namespace NPOI.XSSF.UserModel
         /// <param name="relation">Relation to remove</param>
         public static void RemoveRelation(XSSFRelation relation)
         {
-            if (_table.ContainsKey(relation._relation))
-            {
-                _table.Remove(relation._relation);
-            }
+            _table.Remove(relation.Relation);
         }
 
         /// <summary>
@@ -387,9 +408,9 @@ namespace NPOI.XSSF.UserModel
         /// <param name="relation">Relation to add</param>
         internal static void AddRelation(XSSFRelation relation)
         {
-            if ((null != relation._type) && !_table.ContainsKey(relation._relation))
+            if ((null != relation.ContentType) && !_table.ContainsKey(relation.Relation))
             {
-                _table.Add(relation._relation, relation);
+                _table.Add(relation.Relation, relation);
             }
         }
     }

@@ -222,6 +222,8 @@ namespace NPOI.POIFS.Crypt
                 } else {
                     cipher = Cipher.GetInstance(cipherAlgorithm.jceId + "/" + chain.jceId + "/" + padding);
                 }
+                
+                cipher.Algorithm = cipherAlgorithm;
 
                 if (vec == null) {
                     cipher.Init(cipherMode, key);
@@ -313,34 +315,35 @@ namespace NPOI.POIFS.Crypt
         }
 
         private static int[] INITIAL_CODE_ARRAY = {
-        0xE1F0, 0x1D0F, 0xCC9C, 0x84C0, 0x110C, 0x0E10, 0xF1CE,
-        0x313E, 0x1872, 0xE139, 0xD40F, 0x84F9, 0x280C, 0xA96A,
-        0x4EC3
-    };
+            0xE1F0, 0x1D0F, 0xCC9C, 0x84C0, 0x110C, 0x0E10, 0xF1CE,
+            0x313E, 0x1872, 0xE139, 0xD40F, 0x84F9, 0x280C, 0xA96A,
+            0x4EC3
+        };
 
         private static byte[] PAD_ARRAY = {
-        (byte)0xBB, (byte)0xFF, (byte)0xFF, (byte)0xBA, (byte)0xFF,
-        (byte)0xFF, (byte)0xB9, (byte)0x80, (byte)0x00, (byte)0xBE,
-        (byte)0x0F, (byte)0x00, (byte)0xBF, (byte)0x0F, (byte)0x00
-    };
+            (byte)0xBB, (byte)0xFF, (byte)0xFF, (byte)0xBA, (byte)0xFF,
+            (byte)0xFF, (byte)0xB9, (byte)0x80, (byte)0x00, (byte)0xBE,
+            (byte)0x0F, (byte)0x00, (byte)0xBF, (byte)0x0F, (byte)0x00
+        };
 
         private static int[][] ENCRYPTION_MATRIX = {
-        /* char 1  */ new int[] {0xAEFC, 0x4DD9, 0x9BB2, 0x2745, 0x4E8A, 0x9D14, 0x2A09},
-        /* char 2  */ new int[] {0x7B61, 0xF6C2, 0xFDA5, 0xEB6B, 0xC6F7, 0x9DCF, 0x2BBF},
-        /* char 3  */ new int[] {0x4563, 0x8AC6, 0x05AD, 0x0B5A, 0x16B4, 0x2D68, 0x5AD0},
-        /* char 4  */ new int[] {0x0375, 0x06EA, 0x0DD4, 0x1BA8, 0x3750, 0x6EA0, 0xDD40},
-        /* char 5  */ new int[] {0xD849, 0xA0B3, 0x5147, 0xA28E, 0x553D, 0xAA7A, 0x44D5},
-        /* char 6  */ new int[] {0x6F45, 0xDE8A, 0xAD35, 0x4A4B, 0x9496, 0x390D, 0x721A},
-        /* char 7  */ new int[] {0xEB23, 0xC667, 0x9CEF, 0x29FF, 0x53FE, 0xA7FC, 0x5FD9},
-        /* char 8  */ new int[] {0x47D3, 0x8FA6, 0x0F6D, 0x1EDA, 0x3DB4, 0x7B68, 0xF6D0},
-        /* char 9  */ new int[] {0xB861, 0x60E3, 0xC1C6, 0x93AD, 0x377B, 0x6EF6, 0xDDEC},
-        /* char 10 */ new int[] {0x45A0, 0x8B40, 0x06A1, 0x0D42, 0x1A84, 0x3508, 0x6A10},
-        /* char 11 */ new int[] {0xAA51, 0x4483, 0x8906, 0x022D, 0x045A, 0x08B4, 0x1168},
-        /* char 12 */ new int[] {0x76B4, 0xED68, 0xCAF1, 0x85C3, 0x1BA7, 0x374E, 0x6E9C},
-        /* char 13 */ new int[] {0x3730, 0x6E60, 0xDCC0, 0xA9A1, 0x4363, 0x86C6, 0x1DAD},
-        /* char 14 */ new int[] {0x3331, 0x6662, 0xCCC4, 0x89A9, 0x0373, 0x06E6, 0x0DCC},
-        /* char 15 */ new int[] {0x1021, 0x2042, 0x4084, 0x8108, 0x1231, 0x2462, 0x48C4}
-    };
+            /* char 1  */ new int[] {0xAEFC, 0x4DD9, 0x9BB2, 0x2745, 0x4E8A, 0x9D14, 0x2A09},
+            /* char 2  */ new int[] {0x7B61, 0xF6C2, 0xFDA5, 0xEB6B, 0xC6F7, 0x9DCF, 0x2BBF},
+            /* char 3  */ new int[] {0x4563, 0x8AC6, 0x05AD, 0x0B5A, 0x16B4, 0x2D68, 0x5AD0},
+            /* char 4  */ new int[] {0x0375, 0x06EA, 0x0DD4, 0x1BA8, 0x3750, 0x6EA0, 0xDD40},
+            /* char 5  */ new int[] {0xD849, 0xA0B3, 0x5147, 0xA28E, 0x553D, 0xAA7A, 0x44D5},
+            /* char 6  */ new int[] {0x6F45, 0xDE8A, 0xAD35, 0x4A4B, 0x9496, 0x390D, 0x721A},
+            /* char 7  */ new int[] {0xEB23, 0xC667, 0x9CEF, 0x29FF, 0x53FE, 0xA7FC, 0x5FD9},
+            /* char 8  */ new int[] {0x47D3, 0x8FA6, 0x0F6D, 0x1EDA, 0x3DB4, 0x7B68, 0xF6D0},
+            /* char 9  */ new int[] {0xB861, 0x60E3, 0xC1C6, 0x93AD, 0x377B, 0x6EF6, 0xDDEC},
+            /* char 10 */ new int[] {0x45A0, 0x8B40, 0x06A1, 0x0D42, 0x1A84, 0x3508, 0x6A10},
+            /* char 11 */ new int[] {0xAA51, 0x4483, 0x8906, 0x022D, 0x045A, 0x08B4, 0x1168},
+            /* char 12 */ new int[] {0x76B4, 0xED68, 0xCAF1, 0x85C3, 0x1BA7, 0x374E, 0x6E9C},
+            /* char 13 */ new int[] {0x3730, 0x6E60, 0xDCC0, 0xA9A1, 0x4363, 0x86C6, 0x1DAD},
+            /* char 14 */ new int[] {0x3331, 0x6662, 0xCCC4, 0x89A9, 0x0373, 0x06E6, 0x0DCC},
+            /* char 15 */ new int[] {0x1021, 0x2042, 0x4084, 0x8108, 0x1231, 0x2462, 0x48C4}
+        };
+
         /**
          * Create the verifier for xor obfuscation (method 1)
          *
@@ -377,6 +380,7 @@ namespace NPOI.POIFS.Crypt
             }
             return verifier & 0xFFFF;
         }
+
         /**
          * This method generates the xor verifier for word documents &lt; 2007 (method 2).
          * Its output will be used as password input for the newer word generations which
@@ -439,7 +443,7 @@ namespace NPOI.POIFS.Crypt
          */
         public static String XorHashPassword(String password) {
             int hashedPassword = CreateXorVerifier2(password);
-            return String.Format("%1$08X", hashedPassword);
+            return String.Format("{0:X8}", hashedPassword);
         }
 
         /**
@@ -449,7 +453,7 @@ namespace NPOI.POIFS.Crypt
         public static String XorHashPasswordReversed(String password) {
             int hashedPassword = CreateXorVerifier2(password);
 
-            return String.Format("%1$02X%2$02X%3$02X%4$02X"
+            return String.Format("{0:X2}{1:X2}{2:X2}{3:X2}"
                 , Operator.UnsignedRightShift(hashedPassword , 0) & 0xFF
                 , Operator.UnsignedRightShift(hashedPassword , 8) & 0xFF
                 , Operator.UnsignedRightShift(hashedPassword , 16) & 0xFF
@@ -565,34 +569,114 @@ namespace NPOI.POIFS.Crypt
 
         public class Mac
         {
-            internal static Mac GetInstance(string jceHmacId, string v)
+            private Org.BouncyCastle.Crypto.Macs.HMac hmacEngine;
+            private Org.BouncyCastle.Crypto.IDigest digest;
+            private bool initialized = false;
+
+            internal static Mac GetInstance(string jceHmacId, string provider)
             {
-                throw new NotImplementedException();
+                return GetInstance(jceHmacId);
             }
 
             internal static Mac GetInstance(string jceHmacId)
             {
-                throw new NotImplementedException();
+                var mac = new Mac();
+                
+                switch (jceHmacId.ToUpper())
+                {
+                    case "HMACSHA1":
+                    case "HMAC-SHA1":
+                        mac.digest = new Org.BouncyCastle.Crypto.Digests.Sha1Digest();
+                        break;
+                    case "HMACSHA256":
+                    case "HMAC-SHA256":
+                        mac.digest = new Org.BouncyCastle.Crypto.Digests.Sha256Digest();
+                        break;
+                    case "HMACSHA384":
+                    case "HMAC-SHA384":
+                        mac.digest = new Org.BouncyCastle.Crypto.Digests.Sha384Digest();
+                        break;
+                    case "HMACSHA512":
+                    case "HMAC-SHA512":
+                        mac.digest = new Org.BouncyCastle.Crypto.Digests.Sha512Digest();
+                        break;
+                    case "HMACMD5":
+                    case "HMAC-MD5":
+                        mac.digest = new Org.BouncyCastle.Crypto.Digests.MD5Digest();
+                        break;
+                    default:
+                        throw new NotSupportedException($"HMAC algorithm {jceHmacId} not supported");
+                }
+
+                mac.hmacEngine = new Org.BouncyCastle.Crypto.Macs.HMac(mac.digest);
+                return mac;
             }
 
-            public byte[] DoFinal(object encoded)
+            public byte[] DoFinal(byte[] input)
             {
-                throw new NotImplementedException();
+                if (!initialized)
+                    throw new InvalidOperationException("Mac not initialized");
+
+                // Update with input data
+                hmacEngine.BlockUpdate(input, 0, input.Length);
+                
+                // Get the result
+                byte[] result = new byte[hmacEngine.GetMacSize()];
+                hmacEngine.DoFinal(result, 0);
+                
+                return result;
             }
 
             public byte[] DoFinal()
             {
-                throw new NotImplementedException();
+                if (!initialized)
+                    throw new InvalidOperationException("Mac not initialized");
+
+                byte[] result = new byte[hmacEngine.GetMacSize()];
+                hmacEngine.DoFinal(result, 0);
+                return result;
             }
 
             public void Init(ISecretKey secretKey)
             {
-                throw new NotImplementedException();
+                if (hmacEngine == null)
+                    throw new InvalidOperationException("Mac not created properly");
+
+                byte[] keyBytes = secretKey.GetEncoded();
+                var keyParam = new Org.BouncyCastle.Crypto.Parameters.KeyParameter(keyBytes);
+                hmacEngine.Init(keyParam);
+                initialized = true;
             }
 
-            public void Update(byte[] buf, int v, int readBytes)
+            public void Update(byte[] buf, int offset, int readBytes)
             {
-                throw new NotImplementedException();
+                if (!initialized)
+                    throw new InvalidOperationException("Mac not initialized");
+
+                hmacEngine.BlockUpdate(buf, offset, readBytes);
+            }
+
+            public void Update(byte[] input)
+            {
+                Update(input, 0, input.Length);
+            }
+
+            public void Reset()
+            {
+                if (hmacEngine != null)
+                {
+                    hmacEngine.Reset();
+                }
+            }
+
+            public void Dispose()
+            {
+                // BouncyCastle objects don't typically need explicit disposal
+                // but we can reset and clear references
+                hmacEngine?.Reset();
+                hmacEngine = null;
+                digest = null;
+                initialized = false;
             }
         }
     }

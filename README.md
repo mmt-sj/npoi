@@ -1,48 +1,45 @@
-What's NPOI
-===================
-[![NuGet Badge](https://buildstats.info/nuget/NPOI)](https://www.nuget.org/packages/NPOI)
+[![NuGet](https://img.shields.io/nuget/dt/npoi)](https://www.nuget.org/packages/NPOI)
+[![Nuget Ranking!](https://img.shields.io/badge/Nuget%20Ranking-282-red.svg)](https://github.com/nissl-lab/npoi/issues/1532)
+[![Discord](https://img.shields.io/badge/Chat-Discord-d82679.svg?logo=discord&logoColor=white)](https://discord.gg/rABUseUHme)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square&logo=Apache)](LICENSE)
+[![EULA](https://img.shields.io/badge/EULA-OSMF-blue?labelColor=black&color=C9FF30)](https://github.com/nissl-lab/npoi/blob/master/OSMFEULA.txt)
 [![traffic](https://api.segment.io/v1/pixel/track?data=ewogICJ3cml0ZUtleSI6ICJBV2NjaWd1UkhKODBuNkJ4WlI4cHRaRzBINzY0RmJObCIsCiAgInVzZXJJZCI6ICJ0b255cXVzIiwKICAiZXZlbnQiOiAiTlBPSSBIb21lcGFnZSIKfQ==
 )](#)
-<a href="https://github.com/nissl-lab/npoi/graphs/contributors">
-    <img
-      src="https://img.shields.io/github/contributors/nissl-lab/npoi?logo=github&label=contributors"
-      alt="GitHub contributors"
-    />
-  </a>
+[![Github contributors](https://img.shields.io/github/contributors/nissl-lab/npoi?logo=github&label=contributors)](https://github.com/nissl-lab/npoi/graphs/contributors)
 <br />
-This project is the .NET version of POI Java project. With NPOI, you can read/write Office 2003/2007 files very easily.<br />
 
-About Donation 关于捐款
+> [!IMPORTANT]
+> To ensure the long-term sustainability of this project, a monthly maintenance fee has been introduced.  This fee is required to be paid by all organizations or users of any library from this project who generate revenue. You can pay the fee via [GitHub Sponsors](https://github.com/sponsors/tonyqus).
+>
+> To enact this, an EULA on binary releases is added to the repo and nuget packages since 2.8.0 that requires payment of the maintenance fee.
+>
+> For more information on who must pay the fee and other frequently asked questions, please see the [Open Source Maintenance Fee](https://opensourcemaintenancefee.org/consumers/) organisation page.
+
+
+What's NPOI
+===================
+This project is the .NET version of Apache POI project. With NPOI, you can read/write Office 2003/2007 files very easily.<br />
+
+Documentation
 ============
-Since Github sponsorship is not supported in China so far, it's hard to get donation from Github channel. I'm strictly limiting my contribution time on NPOI these 2 years although it looks to be still maintained well. 
 
-If you profits/benefits from NPOI and you believe it's useful, please [donate this project](https://github.com/nissl-lab/npoi/discussions/923). Thank you!
-
-如果您从NPOI受益或实现盈利，请[给该项目捐款](https://github.com/nissl-lab/npoi/discussions/923)，谢谢！
-
-
-Telegram User Group
-================
-Join us on telegram: https://t.me/npoidevs
-
-Get Started with NPOI
-============
-[Who is using NPOI?](https://github.com/nissl-lab/npoi/issues/705)
-
-[NPOI examples](https://github.com/nissl-lab/npoi-examples)
+[NPOI Official Tutorials](https://www.youtube.com/@codingwithtonyqus)
 
 [Getting Started with NPOI](https://github.com/nissl-lab/npoi/wiki/Getting-Started-with-NPOI)
 
+[How NPOI library succeeds](https://tonyqus.medium.com/how-npoi-succeeds-67ceb7333eb)
+
 [How to use NPOI on Linux](https://github.com/nissl-lab/npoi/wiki/How-to-use-NPOI-on-Linux)
 
-[ORM on NPOI](https://github.com/nissl-lab/npoi/wiki/ORM-on-NPOI)
+[Useful Packages based on NPOI](https://github.com/nissl-lab/npoi/wiki/ORM-on-NPOI)
 
-[NPOI Changelog](https://github.com/nissl-lab/npoi/wiki/Changelog)
+Sponsors
+=================
+Thank you for all the sponsors. [Here is the sponsors list](Sponsors.md) 
 
 Advantage of NPOI
 =================
-a. It's totally free to use
+a. It's totally free to startups, freelancers, and hobbyists (whose annual revenue is less than $10,000 USD)
 
 b. Cover most features of Excel (cell style, data format, formula and so on)
 
@@ -54,13 +51,12 @@ e. Support not only export but also import
 
 f. Real successful cases all over the world
 
-g. [huge amount of basic examples](https://github.com/nissl-lab/npoi-examples)
-
-h. Works on both Windows and Linux 
-
+g. Works on both Windows and Linux 
 
 System Requirement
 ===================
+.NET 8
+
 .NET Standard 2.1 (.NET Core 3.x, .NET 5, .NET 6)
 
 .NET Standard 2.0 (.NET Core 2.x)
@@ -70,3 +66,5 @@ System Requirement
 Contributors
 ===================
 ![Contributors](https://contrib.rocks/image?repo=nissl-lab/npoi)
+
+<a href="https://info.flagcounter.com/bndt"><img src="https://s01.flagcounter.com/count/bndt/bg_FFFFFF/txt_000000/border_CCCCCC/columns_3/maxflags_20/viewers_0/labels_1/pageviews_1/flags_0/percent_0/" alt="Flag Counter" border="0"></a>

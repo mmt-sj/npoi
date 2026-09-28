@@ -1,18 +1,25 @@
-﻿using NPOI.OpenXml4Net.Util;
-using NPOI.OpenXmlFormats.Dml.Spreadsheet;
+﻿using Cysharp.Text;
+using NPOI.OpenXml4Net.Util;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
-using System.Text;
+using System.Text; 
 using System.Xml;
 using System.Xml.Serialization;
 
 namespace NPOI.OpenXmlFormats.Dml.Spreadsheet
 {
+    /// <summary>
+    /// Hold xml data
+    /// </summary>
+    public class XmlObject
+    {
+        public XmlNode Node { get; set; }
+    }
     [Serializable]
     [XmlType(Namespace = "http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing")]
-    public class CT_Shape // empty interface: EG_ObjectChoices
+    public class CT_Shape : XmlObject // empty interface: EG_ObjectChoices
     {
         private CT_ShapeNonVisual nvSpPrField;
         private CT_ShapeProperties spPrField;
@@ -56,6 +63,7 @@ namespace NPOI.OpenXmlFormats.Dml.Spreadsheet
                 else if (childNode.LocalName == "style")
                     ctObj.style = CT_ShapeStyle.Parse(childNode, namespaceManager);
             }
+            ctObj.Node = node;
             return ctObj;
         }
 
@@ -63,12 +71,12 @@ namespace NPOI.OpenXmlFormats.Dml.Spreadsheet
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<xdr:{0}", nodeName));
+            sw.WriteStart("xdr", nodeName);
             XmlHelper.WriteAttribute(sw, "macro", this.macro, true);
             XmlHelper.WriteAttribute(sw, "textlink", this.textlink,true);
             XmlHelper.WriteAttribute(sw, "fLocksText", this.fLocksText, false);
             XmlHelper.WriteAttribute(sw, "fPublished", this.fPublished, false);
-            sw.Write(">");
+            sw.Write('>');
             if (this.nvSpPr != null)
                 this.nvSpPr.Write(sw, "nvSpPr");
             if (this.spPr != null)
@@ -76,8 +84,8 @@ namespace NPOI.OpenXmlFormats.Dml.Spreadsheet
             if (this.style != null)
                 this.style.Write(sw, "style");
             if (this.txBody != null)
-                this.txBody.Write(sw, "txBody");
-            sw.Write(string.Format("</xdr:{0}>", nodeName));
+                this.txBody.Write(sw, "xdr", "txBody");
+            sw.WriteEndElement("xdr", nodeName);
         }
 
         public CT_ShapeNonVisual AddNewNvSpPr()
@@ -176,143 +184,6 @@ namespace NPOI.OpenXmlFormats.Dml.Spreadsheet
 
     }
 
-    [System.ComponentModel.DesignerCategory("code")]
-    [XmlType(Namespace = "http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing")]
-    public class CT_TextBody
-    {
-
-        private CT_TextBodyProperties bodyPrField;
-
-        private CT_TextListStyle lstStyleField;
-
-        private List<CT_TextParagraph> pField;
-
-        public static CT_TextBody Parse(XmlNode node, XmlNamespaceManager namespaceManager)
-        {
-            if (node == null)
-                return null;
-            CT_TextBody ctObj = new CT_TextBody();
-            ctObj.p = new List<CT_TextParagraph>();
-            foreach (XmlNode childNode in node.ChildNodes)
-            {
-                if (childNode.LocalName == "bodyPr")
-                    ctObj.bodyPr = CT_TextBodyProperties.Parse(childNode, namespaceManager);
-                else if (childNode.LocalName == "lstStyle")
-                    ctObj.lstStyle = CT_TextListStyle.Parse(childNode, namespaceManager);
-                else if (childNode.LocalName == "p")
-                    ctObj.p.Add(CT_TextParagraph.Parse(childNode, namespaceManager));
-            }
-            return ctObj;
-        }
-
-
-
-        internal void Write(StreamWriter sw, string nodeName)
-        {
-            sw.Write(string.Format("<xdr:{0}", nodeName));
-            sw.Write(">");
-            if (this.bodyPr != null)
-                this.bodyPr.Write(sw, "bodyPr");
-            if (this.lstStyle != null)
-                this.lstStyle.Write(sw, "lstStyle");
-            foreach (CT_TextParagraph x in this.p)
-            {
-                x.Write(sw, "p");
-            }
-            sw.Write(string.Format("</xdr:{0}>", nodeName));
-        }
-
-        public void SetPArray(CT_TextParagraph[] array)
-        {
-            if (array == null)
-                pField.Clear();
-            else
-                pField = new List<CT_TextParagraph>(array);
-        }
-        public CT_TextParagraph AddNewP()
-        {
-            if (this.pField == null)
-                pField = new List<CT_TextParagraph>();
-            CT_TextParagraph tp = new CT_TextParagraph();
-            pField.Add(tp);
-            return tp;
-        }
-        public CT_TextBodyProperties AddNewBodyPr()
-        {
-            this.bodyPrField = new CT_TextBodyProperties();
-            return this.bodyPrField;
-        }
-        public CT_TextListStyle AddNewLstStyle()
-        {
-            this.lstStyleField = new CT_TextListStyle();
-            return this.lstStyleField;
-        }
-
-        public CT_TextBodyProperties bodyPr
-        {
-            get
-            {
-                return this.bodyPrField;
-            }
-            set
-            {
-                this.bodyPrField = value;
-            }
-        }
-
-
-        public CT_TextListStyle lstStyle
-        {
-            get
-            {
-                return this.lstStyleField;
-            }
-            set
-            {
-                this.lstStyleField = value;
-            }
-        }
-        public override string ToString()
-        {
-            if (p == null || p.Count == 0)
-                return string.Empty;
-            StringBuilder sb = new StringBuilder();
-            foreach (CT_TextParagraph tp in p)
-            {
-                foreach (CT_RegularTextRun tr in tp.r)
-                {
-                    sb.Append(tr.t);
-                }
-            }
-            return sb.ToString();
-        }
-
-        [XmlElement("p")]
-        public List<CT_TextParagraph> p
-        {
-            get
-            {
-                return this.pField;
-            }
-            set
-            {
-                this.pField = value;
-            }
-        }
-
-        public CT_TextParagraph GetPArray(int pos)
-        {
-            if (p == null)
-                return null;
-            return p[pos];
-        }
-
-        public int SizeOfPArray()
-        {
-            return p.Count;
-        }
-    }
-
     [Serializable]
     [System.ComponentModel.DesignerCategory("code")]
     [XmlType(Namespace = "http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing")]
@@ -349,8 +220,8 @@ namespace NPOI.OpenXmlFormats.Dml.Spreadsheet
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<xdr:{0}", nodeName));
-            sw.Write(">");
+            sw.WriteStart("xdr", nodeName);
+            sw.Write('>');
             if (this.lnRef != null)
                 this.lnRef.Write(sw, "lnRef");
             if (this.fillRef != null)
@@ -359,7 +230,7 @@ namespace NPOI.OpenXmlFormats.Dml.Spreadsheet
                 this.effectRef.Write(sw, "effectRef");
             if (this.fontRef != null)
                 this.fontRef.Write(sw, "fontRef");
-            sw.Write(string.Format("</xdr:{0}>", nodeName));
+            sw.WriteEndElement("xdr", nodeName);
         }
 
         public CT_StyleMatrixReference AddNewFillRef()
@@ -437,7 +308,7 @@ namespace NPOI.OpenXmlFormats.Dml.Spreadsheet
 
     [Serializable]
     [XmlType(Namespace = "http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing")]
-    public class CT_ShapeNonVisual
+    public class CT_ShapeNonVisual : XmlObject
     {
         private CT_NonVisualDrawingProps cNvPrField;
         private CT_NonVisualDrawingShapeProps cNvSpPrField;
@@ -487,6 +358,7 @@ namespace NPOI.OpenXmlFormats.Dml.Spreadsheet
                 else if (childNode.LocalName == "cNvSpPr")
                     ctObj.cNvSpPr = CT_NonVisualDrawingShapeProps.Parse(childNode, namespaceManager);
             }
+            ctObj.Node = node;
             return ctObj;
         }
 
@@ -494,13 +366,13 @@ namespace NPOI.OpenXmlFormats.Dml.Spreadsheet
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<xdr:{0}", nodeName));
-            sw.Write(">");
+            sw.WriteStart("xdr", nodeName);
+            sw.Write('>');
             if (this.cNvPr != null)
                 this.cNvPr.Write(sw, "cNvPr");
             if (this.cNvSpPr != null)
                 this.cNvSpPr.Write(sw, "cNvSpPr");
-            sw.Write(string.Format("</xdr:{0}>", nodeName));
+            sw.WriteEndElement("xdr", nodeName);
         }
 
 
@@ -537,14 +409,14 @@ namespace NPOI.OpenXmlFormats.Dml.Spreadsheet
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<xdr:{0}", nodeName));
+            sw.WriteStart("xdr", nodeName);
             XmlHelper.WriteAttribute(sw, "txBox", this.txBox, false);
-            sw.Write(">");
+            sw.Write('>');
             if (this.spLocks != null)
                 this.spLocks.Write(sw, "spLocks");
             if (this.extLst != null)
                 this.extLst.Write(sw, "extLst");
-            sw.Write(string.Format("</xdr:{0}>", nodeName));
+            sw.WriteEndElement("xdr", nodeName);
         }
 
 
@@ -591,18 +463,21 @@ namespace NPOI.OpenXmlFormats.Dml.Spreadsheet
     }
     [Serializable]
     [XmlType(Namespace = "http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing")]
-    public class CT_GroupShape
+    public class CT_GroupShape : XmlObject
     {
         CT_GroupShapeProperties grpSpPrField;
         CT_GroupShapeNonVisual nvGrpSpPrField;
-        CT_Connector connectorField = null;
+        List<CT_Connector> connectors = null;
         List<CT_Picture> pictures = null;
         List<CT_Shape> shapes = null;
+        List<CT_GroupShape> groups = null;
 
         public CT_GroupShape()
         {
+            this.connectors = new List<CT_Connector>();
             this.pictures = new List<CT_Picture>();
             this.shapes = new List<CT_Shape>();
+            this.groups = new List<CT_GroupShape>();
         }
 
         public void Set(CT_GroupShape groupShape)
@@ -623,7 +498,8 @@ namespace NPOI.OpenXmlFormats.Dml.Spreadsheet
         }
         public CT_Connector AddNewCxnSp()
         {
-            connectorField = new CT_Connector();
+            var connectorField = new CT_Connector();
+            connectors.Add(connectorField);
             return connectorField;
         }
         public CT_Shape AddNewSp()
@@ -638,6 +514,12 @@ namespace NPOI.OpenXmlFormats.Dml.Spreadsheet
             pictures.Add(pic);
             return pic;
         }
+        public CT_GroupShape AddNewGroupShape()
+        {
+            var group = new CT_GroupShape();
+            groups.Add(group);
+            return group;
+        }
 
         public CT_GroupShapeNonVisual nvGrpSpPr
         {
@@ -650,6 +532,44 @@ namespace NPOI.OpenXmlFormats.Dml.Spreadsheet
             set { grpSpPrField = value; }
 
         }
+        public List<CT_Connector> Connectors { get => connectors; }
+        public List<CT_Picture> Pictures { get => pictures; }
+        public List<CT_Shape> Shapes { get => shapes; }
+        public List<CT_GroupShape> Groups { get => groups; }
+
+        public void GetShapes(List<object> aShapes)         // a:Argument
+        {
+            aShapes.Add(this);
+            if(connectors != null)
+            {
+                foreach(var c in connectors)
+                {
+                    aShapes.Add(c);
+                }
+            }
+            if(pictures != null)
+            {
+                foreach(var p in pictures)
+                {
+                    aShapes.Add(p);
+                }
+            }
+            if(shapes != null)
+            {
+                foreach(var s in shapes)
+                {
+                    aShapes.Add(s);
+                }
+            }
+            if(groups != null)
+            {
+                foreach(var shp in groups)
+                {
+                    shp.GetShapes(aShapes);
+                }
+            }
+        }
+
         public static CT_GroupShape Parse(XmlNode node, XmlNamespaceManager namespaceManager)
         {
             if (node == null)
@@ -671,7 +591,18 @@ namespace NPOI.OpenXmlFormats.Dml.Spreadsheet
                     var shape = CT_Shape.Parse(childNode, namespaceManager);
                     ctObj.shapes.Add(shape);
                 }
+                else if (childNode.LocalName == "cxnSp")
+                {
+                    var connector = CT_Connector.Parse(childNode, namespaceManager);
+                    ctObj.connectors.Add(connector);
+                }
+                else if (childNode.LocalName == "grpSp")
+                {
+                    var group = CT_GroupShape.Parse(childNode, namespaceManager);
+                    ctObj.groups.Add(group);
+                }
             }
+            ctObj.Node = node;
             return ctObj;
         }
 
@@ -679,8 +610,8 @@ namespace NPOI.OpenXmlFormats.Dml.Spreadsheet
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<xdr:{0}", nodeName));
-            sw.Write(">");
+            sw.WriteStart("xdr", nodeName);
+            sw.Write('>');
             if (this.nvGrpSpPr != null)
                 this.nvGrpSpPr.Write(sw, "xdr:nvGrpSpPr");
             if (this.grpSpPr != null)
@@ -699,14 +630,28 @@ namespace NPOI.OpenXmlFormats.Dml.Spreadsheet
                     pic.Write(sw, "pic");
                 }
             }
-            sw.Write(string.Format("</xdr:{0}>", nodeName));
+            if (this.connectors.Count > 0)
+            {
+                foreach(var con in this.connectors)
+                {
+                    con.Write(sw, "cxnSp");
+                }
+            }
+            if (this.groups.Count > 0)
+            {
+                foreach(var group in this.groups)
+                {
+                    group.Write(sw, "grpSp");
+                }
+            }
+            sw.WriteEndElement("xdr", nodeName);
         }
 
     }
 
     [Serializable]
     [XmlType(Namespace = "http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing")]
-    public class CT_GroupShapeNonVisual
+    public class CT_GroupShapeNonVisual : XmlObject
     {
         CT_NonVisualDrawingProps cNvPrField;
         CT_NonVisualGroupDrawingShapeProps cNvGrpSpPrField;
@@ -722,6 +667,7 @@ namespace NPOI.OpenXmlFormats.Dml.Spreadsheet
                 else if (childNode.LocalName == "cNvGrpSpPr")
                     ctObj.cNvGrpSpPr = CT_NonVisualGroupDrawingShapeProps.Parse(childNode, namespaceManager);
             }
+            ctObj.Node = node;
             return ctObj;
         }
 
@@ -729,13 +675,13 @@ namespace NPOI.OpenXmlFormats.Dml.Spreadsheet
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<{0}", nodeName));
-            sw.Write(">");
+            sw.WriteStart(nodeName);
+            sw.Write('>');
             if (this.cNvPr != null)
                 this.cNvPr.Write(sw, "cNvPr");
             if (this.cNvGrpSpPr != null)
                 this.cNvGrpSpPr.Write(sw, "xdr:cNvGrpSpPr");
-            sw.Write(string.Format("</{0}>", nodeName));
+            sw.WriteEndElement(nodeName);
         }
 
         public CT_NonVisualGroupDrawingShapeProps AddNewCNvGrpSpPr()

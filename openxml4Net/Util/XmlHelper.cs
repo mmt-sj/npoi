@@ -3,7 +3,8 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
-using System.Text;
+using System.Text; 
+using Cysharp.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Serialization;
@@ -63,10 +64,16 @@ namespace NPOI.OpenXml4Net.Util
 
             throw new ArgumentException("No XmlEnumAttribute code exists for type " + typeof(T).ToString() + " corresponding to value of " + value);
         }
-        public static int ReadInt(XmlAttribute attr)
+        public static int ReadInt(XmlAttribute attr, int? defaultValue = null)
         {
-            if (attr == null)
+            if(attr == null)
+            {
+                if(defaultValue != null)
+                {
+                    return (int)defaultValue;
+                }
                 return 0;
+            }
             int i;
             if (int.TryParse(attr.Value, out i))
             {
@@ -110,6 +117,13 @@ namespace NPOI.OpenXml4Net.Util
         {
             if (attr == null)
                 return null;
+            return attr.Value;
+        }
+
+        public static string ReadString(XmlAttribute attr, string defaultValue)
+        {
+            if (attr == null)
+                return defaultValue;
             return attr.Value;
         }
         public static decimal ReadDecimal(XmlAttribute attr)
@@ -186,6 +200,7 @@ namespace NPOI.OpenXml4Net.Util
                 }
             }
         }
+
         public static double? ReadDoubleNull(XmlAttribute attr)
         {
             if (attr == null)
@@ -215,7 +230,7 @@ namespace NPOI.OpenXml4Net.Util
                 return blankValue;
 
             string value = attr.Value;
-            if (value == "1" || value == "-1" || value.ToLower() == "true" || value.ToLower() == "on")
+            if (value == "1" || value == "-1" || string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) || string.Equals(value, "on", StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
@@ -277,7 +292,7 @@ namespace NPOI.OpenXml4Net.Util
             if (!match.Success) return t;
 
             bool useNextValue = false;
-            StringBuilder ret = new StringBuilder();
+            using var ret = ZString.CreateStringBuilder();
             int prevIndex = 0;
             while (match.Success)
             {
@@ -304,10 +319,41 @@ namespace NPOI.OpenXml4Net.Util
             ret.Append(t.Substring(prevIndex, t.Length - prevIndex));
             return ret.ToString();
         }
+
+        private static readonly char[] xmlEncodeCharsToReplace = { '&', '<', '>', '"' };
+        private static readonly char[] cdataEncodeCharsToReplace = { '&', '<', '>','\'' ,'"' };
+
         public static string EncodeXml(string xml)
         {
-            return xml.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\"", "&quot;");//.Replace("'", "&apos;");
+            // quick check whether needed
+            if (xml.IndexOfAny(xmlEncodeCharsToReplace) == -1)
+            {
+                return xml;
+            }
+
+            return xml
+                .Replace("&", "&amp;")
+                .Replace("<", "&lt;")
+                .Replace(">", "&gt;")
+                .Replace("\"", "&quot;");//.Replace("'", "&apos;");
         }
+
+        public static string EncodeCDATAContent(string xml)
+        {
+            // quick check whether needed
+            if(xml.IndexOfAny(cdataEncodeCharsToReplace) == -1)
+            {
+                return xml;
+            }
+
+            return xml
+                .Replace("&", "&#38;")
+                .Replace("<", "&#60;")
+                .Replace(">", "&#62;")
+                .Replace("\"", "&#34;")
+                .Replace("'", "&#39;");
+        }
+
         public static void WriteAttribute(StreamWriter sw, string attributeName, bool value)
         {
             WriteAttribute(sw, attributeName, value, true);
@@ -333,6 +379,17 @@ namespace NPOI.OpenXml4Net.Util
             if (value == 0 && !writeIfBlank)
                 return;
 
+            sw.Write(" ");
+            sw.Write(attributeName);
+            sw.Write("=\"");
+            sw.Write(value);
+            sw.Write("\"");
+        }
+        public static void WriteAttribute(StreamWriter sw, string attributeName, int value, int defaultValue)
+        {
+            if(value == defaultValue)
+                return;
+
             WriteAttribute(sw, attributeName, value.ToString(CultureInfo.InvariantCulture));
         }
         public static void WriteAttribute(StreamWriter sw, string attributeName, int value)
@@ -344,7 +401,11 @@ namespace NPOI.OpenXml4Net.Util
             if (value == 0 && !writeIfBlank)
                 return;
 
-            WriteAttribute(sw, attributeName, value.ToString(CultureInfo.InvariantCulture));
+            sw.Write(" ");
+            sw.Write(attributeName);
+            sw.Write("=\"");
+            sw.Write(value);
+            sw.Write("\"");
         }
         public static void WriteAttribute(StreamWriter sw, string attributeName, uint value)
         {
@@ -362,7 +423,12 @@ namespace NPOI.OpenXml4Net.Util
         {
             if ((string.IsNullOrEmpty(value) || defaultValue.Equals(value)) && !writeIfBlank)
                 return;
-            sw.Write(string.Format(" {0}=\"{1}\"", attributeName, value == null ? string.Empty : EncodeXml(value)));
+
+            sw.Write(" ");
+            sw.Write(attributeName);
+            sw.Write("=\"");
+            sw.Write(value == null ? string.Empty : EncodeXml(value));
+            sw.Write("\"");
         }
         public static void WriteAttribute(StreamWriter sw, string attributeName, byte[] value)
         {
@@ -418,8 +484,13 @@ namespace NPOI.OpenXml4Net.Util
 
         public static sbyte ReadSByte(XmlAttribute attr)
         {
+            return ReadSByte(attr, 0);
+        }
+
+        public static sbyte ReadSByte(XmlAttribute attr, sbyte defaultValue)
+        {
             if (attr == null)
-                return 0;
+                return defaultValue;
 
             sbyte i;
             if (sbyte.TryParse(attr.Value, out i))

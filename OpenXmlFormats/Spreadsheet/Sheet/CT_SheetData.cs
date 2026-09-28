@@ -12,6 +12,7 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
     [XmlType(Namespace = "http://schemas.openxmlformats.org/spreadsheetml/2006/main")]
     public class CT_SheetData
     {
+        private int lastColumnField = 0;
 
         public static CT_SheetData Parse(XmlNode node, XmlNamespaceManager namespaceManager)
         {
@@ -19,20 +20,28 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
                 return null;
             CT_SheetData ctObj = new CT_SheetData();
             ctObj.row = new List<CT_Row>();
+
             foreach (XmlNode childNode in node.ChildNodes)
             {
                 if (childNode.LocalName == "row")
-                    ctObj.row.Add(CT_Row.Parse(childNode, namespaceManager));
+                {
+                    CT_Row row = CT_Row.Parse(childNode, namespaceManager);
+                    ctObj.row.Add(row);
+
+                    if (row.lastCell > ctObj.lastColumnField)
+                    {
+                        ctObj.lastColumnField = row.lastCell;
+                    }
+                }
             }
+
             return ctObj;
         }
 
-
-
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<{0}", nodeName));
-            sw.Write(">");
+            sw.WriteStart(nodeName);
+            sw.Write('>');
             if (this.row != null)
             {
                 foreach (CT_Row x in this.row)
@@ -40,12 +49,12 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
                     x.Write(sw, "row");
                 }
             }
-            sw.Write(string.Format("</{0}>", nodeName));
+            sw.WriteEndElement(nodeName);
         }
 
 
 
-        private List<CT_Row> rowField = null; // [0..*] 
+        private List<CT_Row> rowField = null; // [0..*]
 
         //public CT_SheetData()
         //{
@@ -98,6 +107,10 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
         {
             return (null == rowField) ? null : rowField[index];
         }
+        public List<CT_Row> GetRowArray()
+        {
+            return row;
+        }
         [XmlElement("row")]
         public List<CT_Row> row
         {
@@ -114,6 +127,15 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
         public bool rowSpecified
         {
             get { return null != rowField; }
+        }
+
+        [XmlIgnore]
+        public int lastColumn
+        {
+            get
+            {
+                return this.lastColumnField;
+            }
         }
     }
 }

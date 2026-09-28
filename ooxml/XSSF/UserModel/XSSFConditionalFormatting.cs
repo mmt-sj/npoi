@@ -22,6 +22,9 @@ using NPOI.OpenXmlFormats.Spreadsheet;
 using System.Collections.Generic;
 using NPOI.SS.Util;
 using System;
+using System.Text; 
+using Cysharp.Text;
+
 namespace NPOI.XSSF.UserModel
 {
 
@@ -32,8 +35,8 @@ namespace NPOI.XSSF.UserModel
      */
     public class XSSFConditionalFormatting : IConditionalFormatting
     {
-        private CT_ConditionalFormatting _cf;
-        private XSSFSheet _sh;
+        private readonly CT_ConditionalFormatting _cf;
+        private readonly XSSFSheet _sh;
 
         /*package*/
         internal XSSFConditionalFormatting(XSSFSheet sh)
@@ -61,7 +64,7 @@ namespace NPOI.XSSF.UserModel
         public CellRangeAddress[] GetFormattingRanges()
         {
             List<CellRangeAddress> lst = new List<CellRangeAddress>();
-            String[] regions = _cf.sqref.Split(new char[] { ' ' });
+            String[] regions = _cf.sqref.Split(' ');
             for (int i = 0; i < regions.Length; i++)
             {
                 lst.Add(CellRangeAddress.ValueOf(regions[i]));
@@ -69,6 +72,30 @@ namespace NPOI.XSSF.UserModel
             return lst.ToArray();
         }
 
+        public void SetFormattingRanges(CellRangeAddress[] ranges)
+        {
+            if (ranges == null)
+            {
+                throw new ArgumentNullException("cellRanges must not be null");
+            }
+            using var sb = ZString.CreateStringBuilder();
+
+            bool first = true;
+            foreach (CellRangeAddress range in ranges)
+            {
+                if (!first)
+                {
+                    sb.Append(" ");
+                }
+                else
+                {
+                    first = false;
+                }
+                sb.Append(range.FormatAsString());
+            }
+            _cf.sqref = sb.ToString();
+            //_cf.setSqref(Collections.singletonList(sb.ToString()));
+        }
         /**
          * Replaces an existing Conditional Formatting rule at position idx.
          * Excel allows to create up to 3 Conditional Formatting rules.
